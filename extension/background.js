@@ -6,7 +6,7 @@
 
 const DEFAULTS = {
   enabled: true,
-  backendUrl: "http://127.0.0.1:8000",
+  backendUrl: "https://sentinelai.help",
   orgKey: "",          // API key ขององค์กร (SaaS) — จากหน้า "ตั้งค่า & เชื่อมต่อ" ใน Dashboard
   user: "unknown",
   department: "",
