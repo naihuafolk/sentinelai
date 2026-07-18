@@ -313,12 +313,13 @@ async def admin_overview(ctx: dict = Depends(auth.get_platform_admin)):
 
 
 # ============================ Downloads (extension/agent) =============
-def _zip_dir(folder: _Path, arc_root: str) -> bytes:
+def _zip_dir(folder: _Path, arc_root: str = "") -> bytes:
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         for p in folder.rglob("*"):
             if p.is_file() and "__pycache__" not in p.parts and not p.name.endswith((".db", ".pyc")):
-                z.write(p, f"{arc_root}/{p.relative_to(folder).as_posix()}")
+                rel = p.relative_to(folder).as_posix()
+                z.write(p, f"{arc_root}/{rel}" if arc_root else rel)
     buf.seek(0)
     return buf.read()
 
@@ -331,7 +332,9 @@ async def download_package(what: str):
     folder = mapping.get(what)
     if not folder or not folder.exists():
         raise HTTPException(404, "ไม่พบแพ็กเกจ")
-    data = _zip_dir(folder, f"sentinelai-{what}")
+    # extension: วางไฟล์ที่ราก zip (แตกออกมาได้โฟลเดอร์เดียว มี manifest อยู่ราก — Chrome โหลดง่าย ไม่ซ้อนชั้น)
+    arc = "" if what == "extension" else f"sentinelai-{what}"
+    data = _zip_dir(folder, arc)
     return StreamingResponse(iter([data]), media_type="application/zip",
                              headers={"Content-Disposition": f"attachment; filename=sentinelai-{what}.zip"})
 
