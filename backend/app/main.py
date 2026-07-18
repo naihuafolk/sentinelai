@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path as _Path
 from typing import Optional
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -104,12 +104,18 @@ async def me(ctx: dict = Depends(auth.get_current_user)):
 
 # ============================ Core (Extension/Agent via org API key) ====
 @app.post(f"{API}/inspect", response_model=InspectResponse, tags=["core"])
-async def inspect(req: InspectRequest, org: dict = Depends(auth.get_org_from_key)):
+async def inspect(req: InspectRequest, request: Request, org: dict = Depends(auth.get_org_from_key)):
     """หัวใจ: ตรวจเนื้อหาก่อนส่งไป AI แล้วตัดสิน (ต้องส่ง header X-Sentinel-Key ขององค์กร)."""
-    # License enforcement: กันเอา key ไปรันเกินสิทธิ์/ไม่ได้ซื้อ
-    auth.check_license(org, device_id=req.device)
+    # identity จริงของเครื่อง = ลายนิ้วมือฮาร์ดแวร์ (device_fp); ถ้าไม่มีค่อย fallback เป็นชื่อเครื่อง
+    identity = (req.device_fp or req.device or "").strip()
+    ip = auth.client_ip(request)
+    # License enforcement: กันเอา key ไปรันเกินสิทธิ์/ไม่ได้ซื้อ (seat นับตาม identity จริง)
+    auth.check_license(org, device_id=identity)
     kind = "endpoint" if req.channel in ("desktop", "file") else "browser"
-    db.register_device(org["id"], req.device, user=req.user, dept=req.department, kind=kind)
+    # ลงทะเบียนอุปกรณ์ + ติดตามไอพี → จับการแชร์คีย์ (1 เครื่อง = 1 สิทธิ์)
+    share = db.register_device(org["id"], identity, name=req.device, user=req.user,
+                               dept=req.department, kind=kind, ip=ip)
+    auth.check_device_sharing(org, identity, req.device, share)
     return await service.inspect(req, org_id=org["id"])
 
 

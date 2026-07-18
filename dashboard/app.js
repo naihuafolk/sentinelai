@@ -283,7 +283,7 @@ function showApp() {
   $("#app").hidden = false;
   updateHeader();
   route();
-  refreshAiPill();
+  refreshLicensePill();
 }
 
 function renderAuth(tab = "login") {
@@ -649,7 +649,7 @@ $("#btn-refresh").addEventListener("click", () => {
   if (state.route === "settings" || state.route === "simulator" || state.route === "response-scan") state.config = null;
   state.stats = null;
   route();
-  refreshAiPill();
+  refreshLicensePill();
 });
 $("#btn-logout").addEventListener("click", logout);
 
@@ -662,20 +662,38 @@ function updateHeader() {
   $("#hdr-user").textContent = user?.email || "";
 }
 
-// อัปเดต AI-status pill จาก /config (endpoint สาธารณะ)
-async function refreshAiPill() {
-  const pill = $("#ai-pill"), txt = $(".ai-pill-text", pill);
+// อัปเดตป้าย License/airtime บน topbar (ขายรายเครื่อง/เดือน → โชว์วันหมดอายุ)
+function licenseInfo(org) {
+  if (!org) return { on: false, text: "License: —", title: "" };
+  const status = (org.status || "trial").toLowerCase();
+  if (status === "suspended") return { on: false, text: "⛔ ถูกระงับการใช้งาน", title: "องค์กรถูกระงับ — ติดต่อฝ่ายขาย" };
+  const seats = Number(org.seats) || 0;
+  const seatTxt = seats ? ` · สิทธิ์ ${seats} เครื่อง` : "";
+  const vu = org.valid_until ? new Date(org.valid_until) : null;
+  const kind = status === "trial" ? "ทดลอง" : "License";
+  if (!vu || isNaN(vu.getTime())) {
+    return { on: true, text: status === "active" ? "License: ใช้งานอยู่" : "ทดลองใช้งาน", title: "ไม่ได้กำหนดวันหมดอายุ" + seatTxt };
+  }
+  const dstr = vu.toLocaleDateString("en-GB");
+  const days = Math.ceil((vu.getTime() - Date.now()) / 86400000);
+  if (days < 0) return { on: false, text: "⛔ License หมดอายุแล้ว", title: `หมดอายุเมื่อ ${dstr}${seatTxt}` };
+  if (days === 0) return { on: false, text: `⚠️ ${kind}: หมดอายุวันนี้`, title: `${dstr}${seatTxt}` };
+  const icon = days <= 7 ? "⚠️" : "⏳";
+  return { on: days > 7, text: `${icon} ${kind}: เหลือ ${days} วัน`, title: `หมดอายุ ${dstr}${seatTxt}` };
+}
+
+async function refreshLicensePill() {
+  const pill = $("#ai-pill"); if (!pill) return;
+  const txt = $(".ai-pill-text", pill);
   pill.classList.remove("ai-pill--on", "ai-pill--off");
   pill.classList.add("ai-pill--unknown");
-  try {
-    const cfg = await ensureConfig();
-    pill.classList.remove("ai-pill--unknown");
-    if (cfg.ai_enabled) { pill.classList.add("ai-pill--on"); txt.textContent = "AI: BytePlus เปิดใช้งาน"; }
-    else { pill.classList.add("ai-pill--off"); txt.textContent = "AI: Regex/Fingerprint"; }
-  } catch {
-    pill.classList.remove("ai-pill--unknown"); pill.classList.add("ai-pill--off");
-    txt.textContent = "ออฟไลน์";
-  }
+  let org = state.org;
+  if (!org) { try { org = await ensureOrg(); } catch {} }
+  const info = licenseInfo(org);
+  pill.classList.remove("ai-pill--unknown");
+  pill.classList.add(info.on ? "ai-pill--on" : "ai-pill--off");
+  if (txt) txt.textContent = info.text;
+  pill.title = info.title || "";
 }
 
 function pageHead(title, desc, actionsHtml = "") {
@@ -1254,6 +1272,256 @@ function renderScanResult(res) {
 }
 
 /* ============================================================================
+ *  Install Guide — ภาพจำลอง (mockup) การติดตั้งแบบละเอียด ทั้ง 2 ฝั่ง
+ *  Browser Extension (Chrome/Edge) + Endpoint Agent (คอมพิวเตอร์)
+ *  หมายเหตุ: ทุก mockup สร้างด้วย HTML/CSS ล้วน (.ig-* layout, .mk-* mockup)
+ * ========================================================================== */
+function installGuide(apiKey) {
+  const k = String(apiKey || "");
+  // แสดง 10 ตัวแรก + 4 ตัวท้าย ปิดตรงกลางเพื่อความปลอดภัย
+  const masked = k.length >= 14
+    ? esc(k.slice(0, 10) + "••••••••••" + k.slice(-4))
+    : "sk_live_org_••••••••1a2b";
+  return `
+  <div class="ig">
+    <div class="ig-cols">
+
+      <!-- ══════════ ฝั่งเบราว์เซอร์ ══════════ -->
+      <section class="ig-col">
+        <div class="ig-colhead"><span class="ig-colico">🌐</span> บนเบราว์เซอร์ (Chrome/Edge)</div>
+        <ol class="ig-steps">
+
+          <li class="ig-step">
+            <div class="ig-badge">1</div>
+            <div class="ig-body">
+              <div class="ig-cap">ดาวน์โหลดไฟล์ Extension แล้วแตกไฟล์ .zip</div>
+              <div class="ig-mock">
+                <div class="mk-shelf">
+                  <div class="mk-dlchip">
+                    <div class="mk-dlchip-ico">🗜️</div>
+                    <div class="mk-dlchip-meta">
+                      <div class="mk-dlchip-name">sentinelai-extension.zip</div>
+                      <div class="mk-dlchip-sub">27 KB · เสร็จสิ้น</div>
+                    </div>
+                    <div class="mk-dlchip-ok">✓</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <li class="ig-step">
+            <div class="ig-badge">2</div>
+            <div class="ig-body">
+              <div class="ig-cap">เปิด <code class="ig-code">chrome://extensions</code> แล้วเปิด Developer mode</div>
+              <div class="ig-mock">
+                <div class="mk-browser">
+                  <div class="mk-tb">
+                    <span class="mk-dot r"></span><span class="mk-dot y"></span><span class="mk-dot g"></span>
+                    <div class="mk-tab">🧩 ส่วนขยาย</div>
+                  </div>
+                  <div class="mk-addr"><span class="mk-lock">🔒</span><span class="mk-url">chrome://extensions</span></div>
+                  <div class="mk-exttoolbar">
+                    <div class="mk-extbtns">
+                      <span class="mk-cbtn">Load unpacked</span>
+                      <span class="mk-cbtn">Pack extension</span>
+                      <span class="mk-cbtn">Update</span>
+                    </div>
+                    <div class="mk-devmode">
+                      <span class="mk-devlbl">Developer mode</span>
+                      <span class="mk-toggle on"><span class="mk-knob"></span></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <li class="ig-step">
+            <div class="ig-badge">3</div>
+            <div class="ig-body">
+              <div class="ig-cap">กด <b>Load unpacked</b> แล้วเลือกโฟลเดอร์ที่แตกไว้</div>
+              <div class="ig-mock">
+                <div class="mk-browser mk-browser-sm">
+                  <div class="mk-exttoolbar">
+                    <div class="mk-extbtns">
+                      <span class="mk-cbtn mk-cbtn-hl">Load unpacked</span>
+                      <span class="mk-cbtn">Pack extension</span>
+                      <span class="mk-cbtn">Update</span>
+                    </div>
+                  </div>
+                  <div class="mk-folderrow">
+                    <span class="mk-folderchip">📁 sentinelai-extension</span>
+                    <span class="mk-folderhint">→ เลือกโฟลเดอร์นี้</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <li class="ig-step">
+            <div class="ig-badge">4</div>
+            <div class="ig-body">
+              <div class="ig-cap">คลิกไอคอน 🛡️ แล้ววาง <b>Org Key</b> (คีย์ขององค์กร)</div>
+              <div class="ig-mock">
+                <div class="mk-popup">
+                  <div class="mk-pop-head">
+                    <span class="mk-pop-shield">🛡️</span>
+                    <span class="mk-pop-title">SentinelAI</span>
+                    <span class="mk-pop-ver">v1.0</span>
+                  </div>
+                  <div class="mk-pop-body">
+                    <div class="mk-field">
+                      <span class="mk-flabel">Org Key</span>
+                      <span class="mk-input mono">${masked}</span>
+                    </div>
+                    <div class="mk-field">
+                      <span class="mk-flabel">อีเมลผู้ใช้</span>
+                      <span class="mk-input">somchai@company.co.th</span>
+                    </div>
+                    <div class="mk-field">
+                      <span class="mk-flabel">แผนก</span>
+                      <span class="mk-input">ฝ่ายการเงิน</span>
+                    </div>
+                    <span class="mk-pop-btn">เชื่อมต่อ</span>
+                    <div class="mk-pop-status">✓ เชื่อมต่อกับองค์กรแล้ว</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <li class="ig-step">
+            <div class="ig-badge">5</div>
+            <div class="ig-body">
+              <div class="ig-cap">ใช้งานได้ทันที — ป้องกันบน ChatGPT / Gemini / Claude</div>
+              <div class="ig-mock">
+                <div class="mk-chat">
+                  <div class="mk-chat-head"><span class="mk-chat-ava">🤖</span> ChatGPT</div>
+                  <div class="mk-chat-input">
+                    <span class="mk-chat-text">ช่วยสรุปข้อมูลลูกค้า: บัตรเครดิต 4539 1234 5678 9010 …</span>
+                    <span class="mk-chat-send">➤</span>
+                  </div>
+                  <div class="mk-intercept">
+                    <span class="mk-int-ico">🛡️</span>
+                    <span class="mk-int-txt">บล็อก: พบเลขบัตรเครดิต — ข้อมูลไม่ถูกส่งออก</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
+
+        </ol>
+      </section>
+
+      <!-- ══════════ ฝั่งคอมพิวเตอร์ ══════════ -->
+      <section class="ig-col">
+        <div class="ig-colhead"><span class="ig-colico">💻</span> บนคอมพิวเตอร์ (Endpoint Agent)</div>
+        <ol class="ig-steps">
+
+          <li class="ig-step">
+            <div class="ig-badge">1</div>
+            <div class="ig-body">
+              <div class="ig-cap">ดาวน์โหลด Agent และตรวจว่าเครื่องมี Python</div>
+              <div class="ig-mock">
+                <div class="mk-chiprow">
+                  <span class="mk-chip"><span class="mk-chip-ico">📦</span> sentinelai-agent.zip <span class="mk-chip-ok">✓</span></span>
+                  <span class="mk-chip"><span class="mk-chip-ico">🐍</span> Python 3.12 <span class="mk-chip-ok">✓</span></span>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <li class="ig-step">
+            <div class="ig-badge">2</div>
+            <div class="ig-body">
+              <div class="ig-cap">ตั้งค่าตัวแปรแวดล้อม (Org Key + Backend URL)</div>
+              <div class="ig-mock">
+                <div class="mk-term">
+                  <div class="mk-term-bar">
+                    <span class="mk-dot r"></span><span class="mk-dot y"></span><span class="mk-dot g"></span>
+                    <span class="mk-term-title">Windows PowerShell</span>
+                  </div>
+                  <div class="mk-term-body">
+                    <div class="mk-line"><span class="mk-prompt">PS C:\\SentinelAI&gt;</span> <span class="mk-cmd">set SENTINEL_ORG_KEY=${masked}</span></div>
+                    <div class="mk-line"><span class="mk-prompt">PS C:\\SentinelAI&gt;</span> <span class="mk-cmd">set SENTINEL_BACKEND_URL=https://sentinelai.help</span></div>
+                    <div class="mk-line"><span class="mk-prompt">PS C:\\SentinelAI&gt;</span> <span class="mk-caret"></span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <li class="ig-step">
+            <div class="ig-badge">3</div>
+            <div class="ig-body">
+              <div class="ig-cap">รันตัวเฝ้าคลิปบอร์ด (clipboard guard)</div>
+              <div class="ig-mock">
+                <div class="mk-term">
+                  <div class="mk-term-bar">
+                    <span class="mk-dot r"></span><span class="mk-dot y"></span><span class="mk-dot g"></span>
+                    <span class="mk-term-title">Windows PowerShell</span>
+                  </div>
+                  <div class="mk-term-body">
+                    <div class="mk-line"><span class="mk-prompt">PS C:\\SentinelAI&gt;</span> <span class="mk-cmd">python agent/clipboard_guard.py</span></div>
+                    <div class="mk-line mk-l-hi">🛡️  SentinelAI Agent v1.0</div>
+                    <div class="mk-line mk-l-cy">→ เชื่อมต่อ sentinelai.help ✓</div>
+                    <div class="mk-line mk-l-dim">→ เฝ้าดูคลิปบอร์ด… <span class="mk-caret"></span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <li class="ig-step">
+            <div class="ig-badge">4</div>
+            <div class="ig-body">
+              <div class="ig-cap">เมื่อพบข้อมูลลับ ระบบจะบล็อกและแจ้งเตือนทันที</div>
+              <div class="ig-mock">
+                <div class="mk-dialog">
+                  <div class="mk-dlg-bar">
+                    <span class="mk-dlg-title">SentinelAI — แจ้งเตือนความปลอดภัย</span>
+                    <span class="mk-dlg-x">✕</span>
+                  </div>
+                  <div class="mk-dlg-body">
+                    <span class="mk-dlg-ico">⚠️</span>
+                    <div class="mk-dlg-text">พบข้อมูลลับในคลิปบอร์ด (เลขบัตรประชาชน) — การคัดลอกถูกบล็อกไว้</div>
+                  </div>
+                  <div class="mk-dlg-foot"><span class="mk-dlg-btn">ตกลง</span></div>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <li class="ig-step">
+            <div class="ig-badge">5</div>
+            <div class="ig-body">
+              <div class="ig-cap">สแกนไฟล์ทั้งโฟลเดอร์แล้วส่งรายงานขึ้น Dashboard</div>
+              <div class="ig-mock">
+                <div class="mk-term">
+                  <div class="mk-term-bar">
+                    <span class="mk-dot r"></span><span class="mk-dot y"></span><span class="mk-dot g"></span>
+                    <span class="mk-term-title">Windows PowerShell</span>
+                  </div>
+                  <div class="mk-term-body">
+                    <div class="mk-line"><span class="mk-prompt">PS C:\\SentinelAI&gt;</span> <span class="mk-cmd">python agent/file_scanner.py "D:\\Docs"</span></div>
+                    <div class="mk-line mk-l-cy">สแกน 128 ไฟล์ · พบเสี่ยง 3 ไฟล์ · ส่งรายงานขึ้น Dashboard ✓</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
+
+        </ol>
+      </section>
+
+    </div>
+
+    <div class="pdpa-note" style="margin-top:16px;margin-bottom:0">💡 <div>ทุกเครื่องที่ติดตั้ง + ใส่คีย์นี้ เหตุการณ์จะเข้ามาที่ Dashboard นี้ (แท็บ “ภาพรวม” และ “เหตุการณ์”)</div></div>
+  </div>`;
+}
+
+/* ============================================================================
  *  หน้า 7: ตั้งค่า & เชื่อมต่อ (Setup) — API key + สถานะ AI + โมเดล + เครื่องมือ
  * ========================================================================== */
 async function renderSettings() {
@@ -1300,29 +1568,7 @@ async function renderSettings() {
     <!-- วิธีติดตั้ง & ใช้งาน -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-head"><h2 class="card-title">📖 วิธีติดตั้ง &amp; ใช้งาน</h2></div>
-      <div class="grid grid-2">
-        <div>
-          <h3 style="font-size:15px;margin:0 0 8px">🌐 บนเบราว์เซอร์ (Chrome/Edge)</h3>
-          <ol style="margin:0;padding-left:20px;font-size:13px;line-height:1.95;color:var(--ink-dim)">
-            <li>ดาวน์โหลด <b>Extension</b> ด้านบน → แตกไฟล์ zip</li>
-            <li>เปิด <code>chrome://extensions</code> → เปิดสวิตช์ <b>Developer mode</b></li>
-            <li>กด <b>Load unpacked</b> → เลือกโฟลเดอร์ที่แตกไว้</li>
-            <li>คลิกไอคอน 🛡️ → <b>ตั้งค่า</b> → วาง <b>Org Key</b> (คีย์ด้านบน) + อีเมล/แผนก</li>
-            <li>เสร็จ! ป้องกันบน ChatGPT / Gemini / Claude / Copilot ทันที</li>
-          </ol>
-        </div>
-        <div>
-          <h3 style="font-size:15px;margin:0 0 8px">💻 บนคอมพิวเตอร์ (นอกเบราว์เซอร์)</h3>
-          <ol style="margin:0;padding-left:20px;font-size:13px;line-height:1.95;color:var(--ink-dim)">
-            <li>ให้เครื่องมี <b>Python</b> → แตกไฟล์ <b>Agent</b> ด้านบน</li>
-            <li>ตั้งค่า <code>SENTINEL_ORG_KEY</code> = คีย์ด้านบน</li>
-            <li>ตั้งค่า <code>SENTINEL_BACKEND_URL=https://sentinelai.help</code></li>
-            <li>รัน <code>python agent/clipboard_guard.py</code> (เฝ้าคลิปบอร์ด)</li>
-            <li>สแกนไฟล์: <code>python agent/file_scanner.py "โฟลเดอร์"</code></li>
-          </ol>
-        </div>
-      </div>
-      <div class="pdpa-note" style="margin-top:14px;margin-bottom:0">💡 <div>ทุกเครื่องที่ติดตั้ง + ใส่คีย์นี้ เหตุการณ์จะเข้ามาที่ Dashboard นี้ (แท็บ “ภาพรวม” และ “เหตุการณ์”)</div></div>
+      ${installGuide(apiKey)}
     </div>
 
     <!-- สถานะ AI -->

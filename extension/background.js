@@ -24,8 +24,28 @@ function apiBase(cfg) {
   return (cfg.backendUrl || DEFAULTS.backendUrl).replace(/\/+$/, "") + "/api/v1";
 }
 
+// ลายนิ้วมือเบราว์เซอร์แบบคงที่ (กันแชร์คีย์: 1 โปรไฟล์ = 1 สิทธิ์)
+async function getDeviceFp() {
+  const got = await chrome.storage.local.get("deviceFp");
+  if (got && got.deviceFp) return got.deviceFp;
+  const rand = (self.crypto && crypto.randomUUID)
+    ? crypto.randomUUID().replace(/-/g, "")
+    : (Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
+  const fp = "ext_" + rand;
+  await chrome.storage.local.set({ deviceFp: fp });
+  return fp;
+}
+
 async function callInspect(payload) {
   const cfg = await getCfg();
+  const fp = await getDeviceFp();
+  // ผูก identity จริงของเครื่อง/โปรไฟล์ + เติมค่าตัวตนจากการตั้งค่า (กันเว้นว่าง)
+  payload = Object.assign({}, payload, {
+    device_fp: fp,
+    device: (payload && payload.device) || cfg.device || fp,
+    user: (payload && payload.user) || cfg.user,
+    department: (payload && payload.department) || cfg.department,
+  });
   const headers = { "Content-Type": "application/json" };
   if (cfg.orgKey) headers["X-Sentinel-Key"] = cfg.orgKey;  // ส่งเข้าองค์กรที่ถูกต้อง (SaaS)
   const res = await fetch(apiBase(cfg) + "/inspect", {

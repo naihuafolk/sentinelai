@@ -58,6 +58,10 @@ class Settings:
     trial_days: int = _int("SENTINEL_TRIAL_DAYS", 14)
     # กันเอาไปรันมั่ว: บล็อกเมื่อ license ไม่ผ่าน (true) หรือแค่เตือน+ปล่อยผ่าน (false)
     enforce_license: bool = _bool("SENTINEL_ENFORCE_LICENSE", True)
+    # กันแชร์คีย์ (1 เครื่อง = 1 สิทธิ์): ถ้า "ลายนิ้วมือเครื่อง" เดียวถูกใช้จากไอพีมากกว่านี้
+    # ภายในหน้าต่างเวลา → ถือว่าแชร์คีย์ (แจ้งเตือน + บล็อกถ้า enforce_license)
+    share_max_ips: int = _int("SENTINEL_SHARE_MAX_IPS", 3)      # >3 ไอพี (คือ 4+) = สงสัยแชร์
+    share_window_min: int = _int("SENTINEL_SHARE_WINDOW_MIN", 20)  # หน้าต่างเวลา (นาที)
 
     def admin_email_set(self) -> set:
         return {e.strip().lower() for e in self.admin_emails.split(",") if e.strip()}

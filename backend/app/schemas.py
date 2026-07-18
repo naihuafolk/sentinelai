@@ -63,7 +63,8 @@ class InspectRequest(BaseModel):
     action_type: ActionType = "paste"
     user: str = Field("unknown", description="อีเมล/ชื่อผู้ใช้จาก extension/agent")
     department: str = Field("", description="แผนก (ถ้ามี) เพื่อ match policy")
-    device: str = Field("", description="ชื่อเครื่อง/asset id")
+    device: str = Field("", description="ชื่อเครื่อง/asset id (สำหรับแสดงผล)")
+    device_fp: str = Field("", description="ลายนิ้วมือฮาร์ดแวร์/เบราว์เซอร์ = identity จริงของเครื่อง (กันเอาคีย์ไปแชร์หลายเครื่อง)")
     images: list[str] = Field(default_factory=list, description="data URI ของภาพที่จะแนบ (สำหรับ Vision)")
     context: str = Field("", description="บริบทก่อนหน้า (optional)")
     dry_run: bool = Field(False, description="ทดสอบโดยไม่บันทึก Audit Log")

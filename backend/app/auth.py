@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import Depends, Header, HTTPException
+from fastapi import Depends, Header, HTTPException, Request
 
 from . import db
 from .config import settings
@@ -156,6 +156,34 @@ def check_license(org: dict, device_id: str = "") -> None:
         if db.count_devices(org["id"]) >= seats:
             deny(402, f"เกินจำนวนอุปกรณ์ที่ซื้อไว้ ({seats} เครื่อง) — เพิ่ม seat เพื่อใช้เครื่องนี้")
             return
+
+
+def client_ip(request: Request) -> str:
+    """ดึงไอพีจริงของ client (อยู่หลัง Caddy/reverse proxy → อ่าน X-Forwarded-For)."""
+    xff = request.headers.get("x-forwarded-for", "")
+    if xff:
+        return xff.split(",")[0].strip()
+    xr = request.headers.get("x-real-ip", "")
+    if xr:
+        return xr.strip()
+    return request.client.host if request.client else ""
+
+
+def check_device_sharing(org: dict, device_id: str, name: str, share: dict) -> None:
+    """กันแชร์คีย์ (1 เครื่อง = 1 สิทธิ์): ถ้าลายนิ้วมือเครื่องเดียวถูกใช้จากหลายไอพีพร้อมกัน
+    → แจ้งเตือน (บันทึกเหตุการณ์) และบล็อกถ้า enforce_license."""
+    if not share or not share.get("shared"):
+        return
+    if share.get("newly_flagged"):
+        try:
+            db.record_license_alert(org["id"], device_id, name, int(share.get("distinct_ips", 0)))
+        except Exception:
+            pass
+    if settings.enforce_license:
+        raise HTTPException(
+            402,
+            f"พบการใช้คีย์นี้จากหลายเครื่อง/ตำแหน่งพร้อมกัน ({share.get('distinct_ips')} ไอพี) "
+            "— ผิดเงื่อนไข 1 เครื่อง = 1 สิทธิ์ กรุณาเพิ่มจำนวนเครื่อง (seat) หรือติดต่อฝ่ายขาย")
 
 
 def is_platform_admin(user: dict) -> bool:

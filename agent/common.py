@@ -7,9 +7,12 @@ common.py — โครงร่วมของ Endpoint Agent (SentinelAI)
 """
 from __future__ import annotations
 
+import hashlib
 import os
+import platform
 import socket
 import sys
+import uuid
 from pathlib import Path
 
 import httpx
@@ -39,11 +42,54 @@ def _load_env() -> None:
 _load_env()
 
 
+# ---- ลายนิ้วมือฮาร์ดแวร์ (กันเอาคีย์ไปแชร์หลายเครื่อง: 1 เครื่อง = 1 สิทธิ์) ----
+def _machine_guid() -> str:
+    """รหัสเครื่องระดับ OS ที่คงที่ (Windows MachineGuid / Linux machine-id / macOS IOPlatformUUID)."""
+    try:
+        sysname = platform.system()
+        if sysname == "Windows":
+            import winreg  # type: ignore
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Cryptography") as k:
+                return winreg.QueryValueEx(k, "MachineGuid")[0]
+        if sysname == "Darwin":
+            import subprocess
+            out = subprocess.check_output(
+                ["ioreg", "-rd1", "-c", "IOPlatformExpertDevice"], text=True, timeout=5)
+            for line in out.splitlines():
+                if "IOPlatformUUID" in line:
+                    return line.split('"')[-2]
+        else:  # Linux/อื่น ๆ
+            for p in ("/etc/machine-id", "/var/lib/dbus/machine-id"):
+                fpath = Path(p)
+                if fpath.exists():
+                    return fpath.read_text().strip()
+    except Exception:
+        pass
+    return ""
+
+
+def hardware_fingerprint() -> str:
+    """ลายนิ้วมือคงที่ต่อเครื่อง — คัดลอกโฟลเดอร์/คีย์ไปเครื่องอื่น = ลายนิ้วมือเปลี่ยน = ต้องใช้สิทธิ์ใหม่."""
+    override = os.getenv("SENTINEL_DEVICE_FP", "").strip()
+    if override:
+        return override
+    parts = [
+        _machine_guid(),
+        str(uuid.getnode()),   # node id อิง MAC
+        platform.node(),       # hostname
+        platform.machine(),    # สถาปัตยกรรม CPU
+        platform.system(),
+    ]
+    raw = "|".join(p for p in parts if p) or socket.gethostname()
+    return "hw_" + hashlib.sha256(raw.encode("utf-8", "ignore")).hexdigest()[:32]
+
+
 class AgentConfig:
     backend_url: str = os.getenv("SENTINEL_BACKEND_URL", "http://127.0.0.1:8000").rstrip("/")
     user: str = os.getenv("SENTINEL_USER", os.getenv("USERNAME", "unknown"))
     department: str = os.getenv("SENTINEL_DEPARTMENT", "")
     device: str = os.getenv("SENTINEL_DEVICE", socket.gethostname())
+    device_fp: str = hardware_fingerprint()  # identity จริง (กันแชร์คีย์)
     org_key: str = os.getenv("SENTINEL_ORG_KEY", "")  # API key ขององค์กร (SaaS)
 
     @property
@@ -61,7 +107,7 @@ def inspect_remote(text: str, *, channel: str, action_type: str,
     payload = {
         "text": text, "channel": channel, "destination_url": destination,
         "action_type": action_type, "user": cfg.user, "department": cfg.department,
-        "device": cfg.device, "images": images or [], "dry_run": dry_run,
+        "device": cfg.device, "device_fp": cfg.device_fp, "images": images or [], "dry_run": dry_run,
     }
     headers = {"X-Sentinel-Key": cfg.org_key} if cfg.org_key else {}
     try:

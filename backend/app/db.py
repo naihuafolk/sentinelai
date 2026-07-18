@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
+import uuid
 from datetime import datetime, timezone
 from typing import Any, Optional
 
@@ -55,9 +56,12 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS devices (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     org_id INTEGER NOT NULL,
-    device_id TEXT NOT NULL,               -- ชื่อเครื่อง/asset id
+    device_id TEXT NOT NULL,               -- identity จริง (ลายนิ้วมือฮาร์ดแวร์/เบราว์เซอร์) = 1 สิทธิ์
+    name TEXT,                             -- ชื่อเครื่องสำหรับแสดงผล (hostname)
     "user" TEXT, department TEXT, kind TEXT, os TEXT,
     first_seen TEXT, last_seen TEXT, events INTEGER DEFAULT 0,
+    last_ip TEXT, ip_log TEXT,             -- ไอพีล่าสุด + ประวัติไอพีในหน้าต่างเวลา (กันแชร์คีย์)
+    distinct_ips INTEGER DEFAULT 1, shared INTEGER DEFAULT 0,
     UNIQUE(org_id, device_id)
 );
 CREATE TABLE IF NOT EXISTS events (
@@ -109,6 +113,14 @@ def init_db() -> None:
             try:
                 if not _has_column(conn, "orgs", col):
                     conn.execute(f"ALTER TABLE orgs ADD COLUMN {col} {ddl}")
+            except sqlite3.OperationalError:
+                pass
+        # migration: เพิ่มคอลัมน์กันแชร์คีย์ให้ devices เก่า
+        for col, ddl in (("name", "TEXT"), ("last_ip", "TEXT"), ("ip_log", "TEXT"),
+                         ("distinct_ips", "INTEGER DEFAULT 1"), ("shared", "INTEGER DEFAULT 0")):
+            try:
+                if not _has_column(conn, "devices", col):
+                    conn.execute(f"ALTER TABLE devices ADD COLUMN {col} {ddl}")
             except sqlite3.OperationalError:
                 pass
         conn.commit()
@@ -186,21 +198,75 @@ def org_month_events(org_id: int) -> int:
             (org_id,)).fetchone()["c"]
 
 
-# ==================== Devices (seat enforcement) ====================
-def register_device(org_id: int, device_id: str, user: str = "", dept: str = "",
-                    kind: str = "browser", os: str = "") -> None:
+# ==================== Devices (seat enforcement + anti-share) ====================
+def register_device(org_id: int, device_id: str, *, name: str = "", user: str = "", dept: str = "",
+                    kind: str = "browser", os: str = "", ip: str = "") -> dict:
+    """ลงทะเบียน/อัปเดตอุปกรณ์ด้วย identity จริง (ลายนิ้วมือเครื่อง) + ติดตามไอพีเพื่อจับการแชร์คีย์.
+    คืน dict: {is_new, distinct_ips, shared, newly_flagged} ให้ชั้นบังคับสิทธิ์ใช้ตัดสิน."""
     if not device_id:
-        return
+        return {"is_new": False, "distinct_ips": 0, "shared": False, "newly_flagged": False}
     ts = now_iso()
+    cutoff = datetime.now(timezone.utc).timestamp() - settings.share_window_min * 60
     with _lock:
         conn = _connect()
-        conn.execute(
-            """INSERT INTO devices (org_id, device_id, "user", department, kind, os, first_seen, last_seen, events)
-               VALUES (?,?,?,?,?,?,?,?,1)
-               ON CONFLICT(org_id, device_id) DO UPDATE SET last_seen=excluded.last_seen,
-                 events=events+1, "user"=excluded."user", kind=excluded.kind""",
-            (org_id, device_id, user, dept, kind, os, ts, ts))
+        row = conn.execute(
+            "SELECT ip_log, shared FROM devices WHERE org_id=? AND device_id=?",
+            (org_id, device_id)).fetchone()
+        is_new = row is None
+        # หน้าต่างไอพี: โหลดของเดิม + เพิ่มไอพีปัจจุบัน + ตัดที่เก่ากว่าหน้าต่างเวลา
+        log: dict = {}
+        if row and row["ip_log"]:
+            try:
+                log = json.loads(row["ip_log"])
+            except Exception:
+                log = {}
+        if ip:
+            log[ip] = ts
+        pruned = {}
+        for k, v in log.items():
+            try:
+                t = datetime.fromisoformat(str(v).replace("Z", "+00:00")).timestamp()
+            except Exception:
+                t = cutoff
+            if t >= cutoff:
+                pruned[k] = v
+        log = pruned or ({ip: ts} if ip else {})
+        distinct = len(log)
+        was_shared = bool(row["shared"]) if (row and row["shared"] is not None) else False
+        shared = distinct > settings.share_max_ips
+        newly_flagged = shared and not was_shared
+        if is_new:
+            conn.execute(
+                '''INSERT INTO devices (org_id, device_id, name, "user", department, kind, os,
+                     first_seen, last_seen, events, last_ip, ip_log, distinct_ips, shared)
+                   VALUES (?,?,?,?,?,?,?,?,?,1,?,?,?,?)''',
+                (org_id, device_id, name, user, dept, kind, os, ts, ts, ip,
+                 json.dumps(log), distinct, 1 if shared else 0))
+        else:
+            conn.execute(
+                '''UPDATE devices SET last_seen=?, events=events+1,
+                     name=COALESCE(NULLIF(?, ''), name), "user"=?, kind=?,
+                     last_ip=?, ip_log=?, distinct_ips=?, shared=?
+                   WHERE org_id=? AND device_id=?''',
+                (ts, name, user, kind, ip, json.dumps(log), distinct,
+                 1 if shared else 0, org_id, device_id))
         conn.commit()
+    return {"is_new": is_new, "distinct_ips": distinct, "shared": shared, "newly_flagged": newly_flagged}
+
+
+def record_license_alert(org_id: int, device_id: str, name: str, distinct_ips: int) -> None:
+    """บันทึกแจ้งเตือน 'สงสัยแชร์คีย์' เป็นเหตุการณ์ความปลอดภัย (โผล่ในฟีด + Super Admin)."""
+    insert_event({
+        "id": uuid.uuid4().hex, "org_id": org_id, "ts": now_iso(),
+        "user": "", "department": "", "device": name or device_id,
+        "channel": "license", "destination_url": "", "action_type": "license_check",
+        "label": "Restricted", "risk_score": 95, "categories": ["license"],
+        "decision": "block",
+        "reasons": [f"สงสัยแชร์คีย์: ลายนิ้วมือเครื่องเดียวถูกใช้จาก {distinct_ips} ไอพี "
+                    f"ภายใน {settings.share_window_min} นาที (ผิดเงื่อนไข 1 เครื่อง = 1 สิทธิ์)"],
+        "policy_name": "License Guard", "ai_used": False,
+        "detection_types": ["license_sharing"], "content_excerpt": None,
+    })
 
 
 def count_devices(org_id: int) -> int:
@@ -217,8 +283,9 @@ def device_exists(org_id: int, device_id: str) -> bool:
 def list_devices(org_id: int) -> list[dict]:
     with _lock:
         rows = _connect().execute(
-            'SELECT id, device_id, "user", department, kind, os, last_seen, events '
-            "FROM devices WHERE org_id=? ORDER BY last_seen DESC", (org_id,)).fetchall()
+            'SELECT id, device_id, name, "user", department, kind, os, last_seen, events, '
+            "last_ip, distinct_ips, shared "
+            "FROM devices WHERE org_id=? ORDER BY shared DESC, last_seen DESC", (org_id,)).fetchall()
     return [dict(r) for r in rows]
 
 
