@@ -98,6 +98,57 @@ function setView(content) { view.innerHTML = content; }
 function elFrom(str) { const t = document.createElement("template"); t.innerHTML = str.trim(); return t.content.firstElementChild; }
 function planTH(p) { return PLAN_TH[norm(p)] || (p ? p[0].toUpperCase() + p.slice(1) : "Starter"); }
 
+/* ---------------------------- 2b) Motion helpers (scroll-reveal + count-up) — additive, ไม่แตะ data ---------------------------- */
+const REDUCE_MOTION = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+// นับเลขวิ่งขึ้น (count-up) สำหรับ .count[data-val]
+function countUp(el) {
+  const target = Number(el.dataset.val) || 0;
+  if (REDUCE_MOTION || target === 0 || !("requestAnimationFrame" in window)) { el.textContent = fmtNum(target); return; }
+  const dur = 900, t0 = performance.now(), ease = (p) => 1 - Math.pow(1 - p, 3);
+  const tick = (now) => {
+    const p = Math.min(1, (now - t0) / dur);
+    el.textContent = fmtNum(Math.round(target * ease(p)));
+    if (p < 1) requestAnimationFrame(tick); else el.textContent = fmtNum(target);
+  };
+  requestAnimationFrame(tick);
+}
+function runCountUps(root) {
+  $$(".count[data-val]", root || view).forEach((el) => {
+    if (el.dataset.counted) return;
+    el.dataset.counted = "1";
+    countUp(el);
+  });
+}
+
+// เผยเนื้อหาแบบเลื่อน/จางเข้ามาเมื่อเข้า viewport (IntersectionObserver ตัวเดียวใช้ร่วมกัน)
+const _revealIO = ("IntersectionObserver" in window)
+  ? new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (!en.isIntersecting) return;
+        en.target.classList.add("in");
+        runCountUps(en.target);
+        _revealIO.unobserve(en.target);
+      });
+    }, { root: null, rootMargin: "0px 0px -6% 0px", threshold: 0.05 })
+  : null;
+
+// ติด .reveal ให้ลูกโดยตรงของ #view แล้วสั่งสังเกต (เรียกซ้ำได้ปลอดภัย)
+function revealChildren() {
+  $$("#view > *").forEach((el, i) => {
+    if (el.classList.contains("reveal")) return;
+    el.classList.add("reveal");
+    el.style.setProperty("--reveal-i", String(Math.min(i, 7)));
+    if (_revealIO) _revealIO.observe(el);
+    else { el.classList.add("in"); runCountUps(el); }
+  });
+}
+
+// เนื้อหาของแต่ละแท็บถูกเรนเดอร์แบบ async (skeleton → data) → เฝ้าดู #view เพื่อเผยเนื้อหาชุดสุดท้ายอัตโนมัติ
+if ("MutationObserver" in window) {
+  new MutationObserver(() => revealChildren()).observe(view, { childList: true });
+}
+
 /* ---------------------------- 3) Session (JWT) + API helper ---------------------------- */
 const TOKEN_KEY = "sentinel_token";
 const USER_KEY = "sentinel_user";
@@ -591,6 +642,7 @@ function route() {
   $$(".nav-item").forEach((a) => a.classList.toggle("active", a.dataset.route === state.route));
   hideTip();
   (routes[state.route] || renderOverview)();
+  revealChildren(); // เผยเนื้อหาชุดแรก (skeleton); MutationObserver จะจัดการชุด data ต่อ
 }
 window.addEventListener("hashchange", route);
 $("#btn-refresh").addEventListener("click", () => {
@@ -677,14 +729,17 @@ async function renderOverview() {
   }
 
   const kpis = [
-    { ico: "🔎", label: "เหตุการณ์ตรวจพบ (30 วัน)", value: fmtNum(stats.detections_30d), foot: `เตือน ${fmtNum(stats.warns_30d)} · ปิดบัง ${fmtNum(stats.redactions_30d)}`, glow: "rgba(16,185,129,.20)" },
-    { ico: "🛑", label: "บล็อกการรั่วไหล", value: fmtNum(stats.blocks_30d), foot: "การส่งข้อมูลลับที่ถูกหยุดไว้", glow: "rgba(239,68,68,.20)" },
-    { ico: "🏢", label: "แผนกเสี่ยงสูงสุด", value: esc(stats.top_department || "—"), foot: "แผนกที่ตรวจพบมากที่สุด", glow: "rgba(245,158,11,.20)", small: true },
-    { ico: "💻", label: "เครื่องที่มี Agent", value: `${fmtNum(stats.active_agents_pct)}<span class="unit">%</span>`, foot: "ความครอบคลุมการติดตั้ง", glow: "rgba(59,130,246,.20)" },
+    { ico: "🔎", label: "เหตุการณ์ตรวจพบ (30 วัน)", num: stats.detections_30d, foot: `เตือน ${fmtNum(stats.warns_30d)} · ปิดบัง ${fmtNum(stats.redactions_30d)}`, glow: "rgba(16,185,129,.20)" },
+    { ico: "🛑", label: "บล็อกการรั่วไหล", num: stats.blocks_30d, foot: "การส่งข้อมูลลับที่ถูกหยุดไว้", glow: "rgba(239,68,68,.20)" },
+    { ico: "🏢", label: "แผนกเสี่ยงสูงสุด", text: stats.top_department || "—", foot: "แผนกที่ตรวจพบมากที่สุด", glow: "rgba(245,158,11,.20)", small: true },
+    { ico: "💻", label: "เครื่องที่มี Agent", num: stats.active_agents_pct, unit: "%", foot: "ความครอบคลุมการติดตั้ง", glow: "rgba(59,130,246,.20)" },
   ];
+  const kpiValueHtml = (k) => k.text != null
+    ? esc(k.text)
+    : `<span class="count" data-val="${Number(k.num) || 0}">0</span>${k.unit ? `<span class="unit">${esc(k.unit)}</span>` : ""}`;
   const kpiHtml = kpis.map((k) => `<div class="card kpi" style="--kpi-glow:${k.glow}">
     <div class="kpi-label"><span class="kpi-ico">${k.ico}</span>${esc(k.label)}</div>
-    <div class="kpi-value" style="${k.small ? "font-size:24px" : ""}">${k.value}</div>
+    <div class="kpi-value" style="${k.small ? "font-size:24px" : ""}">${kpiValueHtml(k)}</div>
     <div class="kpi-foot">${esc(k.foot)}</div></div>`).join("");
 
   const recentRows = ev.items.length ? ev.items.map((e) => `
@@ -1230,6 +1285,44 @@ async function renderSettings() {
         <b>วิธีเชื่อมต่อ:</b> ใส่คีย์นี้ในช่อง <b>“Org Key”</b> ของ Browser Extension และตั้งตัวแปร
         <code>SENTINEL_ORG_KEY</code> ของ Endpoint Agent เพื่อให้เหตุการณ์เข้าองค์กรคุณ
       </div></div>
+    </div>
+
+    <!-- ดาวน์โหลดตัวติดตั้ง -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-head"><h2 class="card-title">⬇️ ดาวน์โหลดตัวติดตั้ง</h2></div>
+      <p class="micro" style="margin:0 0 12px">โหลดไปติดตั้งบนเครื่องพนักงาน แล้วใส่ API key ด้านบน</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <a class="btn btn-primary" href="/api/v1/download/extension.zip" download>🌐 ดาวน์โหลด Browser Extension (Chrome/Edge)</a>
+        <a class="btn btn-ghost" href="/api/v1/download/agent.zip" download>💻 ดาวน์โหลด Endpoint Agent (คอม)</a>
+      </div>
+    </div>
+
+    <!-- วิธีติดตั้ง & ใช้งาน -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-head"><h2 class="card-title">📖 วิธีติดตั้ง &amp; ใช้งาน</h2></div>
+      <div class="grid grid-2">
+        <div>
+          <h3 style="font-size:15px;margin:0 0 8px">🌐 บนเบราว์เซอร์ (Chrome/Edge)</h3>
+          <ol style="margin:0;padding-left:20px;font-size:13px;line-height:1.95;color:var(--ink-dim)">
+            <li>ดาวน์โหลด <b>Extension</b> ด้านบน → แตกไฟล์ zip</li>
+            <li>เปิด <code>chrome://extensions</code> → เปิดสวิตช์ <b>Developer mode</b></li>
+            <li>กด <b>Load unpacked</b> → เลือกโฟลเดอร์ที่แตกไว้</li>
+            <li>คลิกไอคอน 🛡️ → <b>ตั้งค่า</b> → วาง <b>Org Key</b> (คีย์ด้านบน) + อีเมล/แผนก</li>
+            <li>เสร็จ! ป้องกันบน ChatGPT / Gemini / Claude / Copilot ทันที</li>
+          </ol>
+        </div>
+        <div>
+          <h3 style="font-size:15px;margin:0 0 8px">💻 บนคอมพิวเตอร์ (นอกเบราว์เซอร์)</h3>
+          <ol style="margin:0;padding-left:20px;font-size:13px;line-height:1.95;color:var(--ink-dim)">
+            <li>ให้เครื่องมี <b>Python</b> → แตกไฟล์ <b>Agent</b> ด้านบน</li>
+            <li>ตั้งค่า <code>SENTINEL_ORG_KEY</code> = คีย์ด้านบน</li>
+            <li>ตั้งค่า <code>SENTINEL_BACKEND_URL=https://sentinelai.help</code></li>
+            <li>รัน <code>python agent/clipboard_guard.py</code> (เฝ้าคลิปบอร์ด)</li>
+            <li>สแกนไฟล์: <code>python agent/file_scanner.py "โฟลเดอร์"</code></li>
+          </ol>
+        </div>
+      </div>
+      <div class="pdpa-note" style="margin-top:14px;margin-bottom:0">💡 <div>ทุกเครื่องที่ติดตั้ง + ใส่คีย์นี้ เหตุการณ์จะเข้ามาที่ Dashboard นี้ (แท็บ “ภาพรวม” และ “เหตุการณ์”)</div></div>
     </div>
 
     <!-- สถานะ AI -->

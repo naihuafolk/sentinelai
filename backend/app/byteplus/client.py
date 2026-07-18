@@ -38,7 +38,7 @@ class ByteplusClient:
         self,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
-        timeout: float = 20.0,
+        timeout: float = 40.0,   # dola-seed reasoning ช้า — ให้เวลามากขึ้น (ลด fallback)
     ) -> None:
         self.api_key = (api_key if api_key is not None else settings.ark_api_key).strip()
         self.base_url = (base_url or settings.ark_base_url).rstrip("/")
