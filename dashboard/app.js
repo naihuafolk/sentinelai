@@ -138,7 +138,8 @@ async function apiFetch(path, { method = "GET", body, form = false, headers = {}
   try {
     res = await fetch(API + path, { method, headers: h, body: payload });
   } catch (e) {
-    showBanner(true);
+    // แสดงแถบเตือนเฉพาะ action ที่ผู้ใช้กดเอง (ไม่ใช่ background poll) เพื่อไม่ให้ค้าง
+    if (!skipAuthHandling && method !== "GET") showBanner(true);
     throw new ApiError("network", "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้");
   }
   showBanner(false);

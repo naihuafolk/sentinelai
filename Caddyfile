@@ -1,11 +1,12 @@
-# แก้ your-domain.com เป็นโดเมนจริงของคุณ
+# แก้ your-domain.com เป็นโดเมนจริงของคุณ (deploy.sh จะแทนที่ให้อัตโนมัติ)
 # Caddy จะขอใบรับรอง HTTPS (Let's Encrypt) ให้อัตโนมัติ — ไม่ต้องตั้งค่าอะไรเพิ่ม
 your-domain.com {
     encode gzip zstd
+    header Cache-Control "no-cache"      # กันเบราว์เซอร์ cache หน้าเก่า → โหลดใหม่เสมอ
     reverse_proxy app:8000
 }
 
-# (ถ้าต้องการรองรับ www ด้วย ให้เพิ่มบล็อกนี้)
-# www.your-domain.com {
-#     redir https://your-domain.com{uri}
-# }
+# รองรับ www → รีไดเรกต์ไปโดเมนหลัก (Caddy ขอ cert ให้เอง)
+www.your-domain.com {
+    redir https://your-domain.com{uri}
+}
