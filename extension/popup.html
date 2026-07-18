@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="hd">
+    <div class="logo">🛡️</div>
+    <div>
+      <div class="brand">SentinelAI</div>
+      <div class="sub">ป้องกันข้อมูลลับรั่วสู่ AI</div>
+    </div>
+    <label class="switch" title="เปิด/ปิดการป้องกัน">
+      <input type="checkbox" id="enabled" />
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="status" id="conn">
+    <span class="dot" id="connDot"></span>
+    <span id="connText">กำลังเชื่อมต่อ…</span>
+  </div>
+
+  <div class="grid">
+    <div class="stat"><div class="num" id="det">–</div><div class="lbl">ตรวจพบ (30 วัน)</div></div>
+    <div class="stat"><div class="num" id="blk">–</div><div class="lbl">บล็อกการรั่วไหล</div></div>
+  </div>
+
+  <div class="airow" id="airow">
+    <span class="ai-dot" id="aiDot"></span>
+    <span id="aiText">โมเดล AI: …</span>
+  </div>
+
+  <div class="actions">
+    <button id="openDash" class="btn primary">เปิดแดชบอร์ด</button>
+    <button id="openOpts" class="btn ghost">ตั้งค่า</button>
+  </div>
+
+  <div class="foot">เวอร์ชัน <span id="ver">1.0</span> • ขับเคลื่อนด้วย BytePlus ModelArk</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

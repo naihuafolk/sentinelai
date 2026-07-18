@@ -1,0 +1,23 @@
+# Secrets / config
+backend/.env
+backend/.jwt_secret
+.jwt_secret
+
+# Database
+backend/*.db
+backend/*.db-wal
+backend/*.db-shm
+*.sqlite
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SentinelAI — ตั้งค่า</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, "Segoe UI", "Sarabun", Tahoma, sans-serif;
+      background: #0b1220; color: #e2e8f0; min-height: 100vh; padding: 40px 20px; }
+    .wrap { max-width: 560px; margin: 0 auto; }
+    .head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .head .logo { font-size: 30px; }
+    h1 { font-size: 22px; color: #f8fafc; }
+    .sub { color: #94a3b8; font-size: 13px; margin-bottom: 26px; }
+    .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 14px; padding: 22px; }
+    .field { margin-bottom: 18px; }
+    label { display: block; font-size: 13px; font-weight: 600; color: #cbd5e1; margin-bottom: 6px; }
+    .hint { font-size: 11px; color: #64748b; margin-top: 4px; }
+    input[type=text], input[type=url], input[type=email], select {
+      width: 100%; padding: 10px 12px; background: #0b1220; border: 1px solid #334155;
+      border-radius: 9px; color: #e2e8f0; font-size: 14px; }
+    input:focus, select:focus { outline: none; border-color: #10b981; }
+    .row { display: flex; gap: 14px; }
+    .row .field { flex: 1; }
+    .checkbox { display: flex; align-items: center; gap: 10px; }
+    .checkbox input { width: 18px; height: 18px; accent-color: #10b981; }
+    .checkbox label { margin: 0; }
+    .save { margin-top: 8px; background: #10b981; color: #052e1a; border: none; padding: 12px 20px;
+      border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
+    .save:hover { filter: brightness(1.08); }
+    .ok { color: #10b981; font-size: 13px; margin-left: 12px; opacity: 0; transition: opacity .2s; }
+    .ok.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="head"><div class="logo">🛡️</div><h1>SentinelAI — ตั้งค่า</h1></div>
+    <div class="sub">กำหนดตัวตนผู้ใช้และที่อยู่เซิร์ฟเวอร์ เพื่อให้เหตุการณ์ถูกบันทึกถูกต้องตามแผนก</div>
+    <div class="card">
+      <div class="field">
+        <label>ที่อยู่เซิร์ฟเวอร์ SentinelAI (Backend URL)</label>
+        <input type="url" id="backendUrl" placeholder="http://127.0.0.1:8000" />
+        <div class="hint">ตำแหน่งที่รัน backend (uvicorn) — ต้องอยู่ใน host_permissions ของส่วนขยาย</div>
+      </div>
+      <div class="field">
+        <label>API Key ขององค์กร (Org Key)</label>
+        <input type="text" id="orgKey" placeholder="sk_org_..." />
+        <div class="hint">คัดลอกจาก Dashboard → แท็บ "ตั้งค่า &amp; เชื่อมต่อ" เพื่อให้เหตุการณ์เข้าองค์กรของคุณ (SaaS)</div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>ผู้ใช้ (อีเมล/ชื่อ)</label>
+          <input type="text" id="user" placeholder="somchai.k@company.co.th" />
+        </div>
+        <div class="field">
+          <label>แผนก</label>
+          <input type="text" id="department" placeholder="การเงิน / การตลาด / HR …" />
+        </div>
+      </div>
+      <div class="field">
+        <label>ชื่อเครื่อง (Device / Asset ID)</label>
+        <input type="text" id="device" placeholder="FIN-PC-014" />
+      </div>
+      <div class="field checkbox">
+        <input type="checkbox" id="enabled" />
+        <label>เปิดการป้องกัน (ดักจับข้อมูลก่อนส่งไป AI)</label>
+      </div>
+      <div class="field checkbox">
+        <input type="checkbox" id="failOpen" />
+        <label>ถ้าเชื่อมต่อเซิร์ฟเวอร์ไม่ได้ → ปล่อยผ่าน (ไม่ขวางการทำงาน)</label>
+      </div>
+      <button class="save" id="save">บันทึกการตั้งค่า</button>
+      <span class="ok" id="ok">✓ บันทึกแล้ว</span>
+    </div>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html>

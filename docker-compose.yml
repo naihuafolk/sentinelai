@@ -1,0 +1,31 @@
+# SentinelAI — production stack (app + Caddy auto-HTTPS)
+# ใช้:  docker compose up -d --build
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: ./backend/.env          # ใส่ ARK_API_KEY, SENTINEL_JWT_SECRET ฯลฯ ที่นี่
+    environment:
+      - SENTINEL_DB_PATH=/data/sentinel.db
+    volumes:
+      - sentinel-data:/data            # DB ถาวร (ไม่หายเวลา redeploy)
+    expose:
+      - "8000"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data               # เก็บใบรับรอง HTTPS (Let's Encrypt)
+      - caddy-config:/config
+    depends_on:
+      - app
+
+volumes:
+  sentinel-data:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,11 @@
+# แก้ your-domain.com เป็นโดเมนจริงของคุณ
+# Caddy จะขอใบรับรอง HTTPS (Let's Encrypt) ให้อัตโนมัติ — ไม่ต้องตั้งค่าอะไรเพิ่ม
+your-domain.com {
+    encode gzip zstd
+    reverse_proxy app:8000
+}
+
+# (ถ้าต้องการรองรับ www ด้วย ให้เพิ่มบล็อกนี้)
+# www.your-domain.com {
+#     redir https://your-domain.com{uri}
+# }

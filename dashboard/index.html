@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SentinelAI — คอนโซลป้องกันข้อมูลลับรั่วสู่ AI</title>
+  <meta name="description" content="แพลตฟอร์มป้องกันข้อมูลลับองค์กรรั่วไหลสู่ AI สาธารณะ" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- แถบเตือนเมื่อเชื่อมต่อเซิร์ฟเวอร์ไม่ได้ -->
+  <div id="conn-banner" class="conn-banner" hidden>
+    <span>⚠️ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ — รัน <code>uvicorn app.main:app --reload</code> แล้วหรือยัง?</span>
+    <button id="conn-retry" class="btn btn-sm btn-ghost">ลองใหม่</button>
+  </div>
+
+  <!-- ============================================================
+       หน้าเข้าสู่ระบบ / สมัครใช้งาน (แสดงเมื่อยังไม่ล็อกอิน)
+       เนื้อหาถูกเรนเดอร์ด้วย app.js -> renderAuth()
+       ============================================================ -->
+  <section id="auth-screen" class="auth-screen" hidden></section>
+
+  <!-- ============================================================
+       แอปหลัก (แสดงเมื่อล็อกอินแล้ว)
+       ============================================================ -->
+  <div id="app" hidden>
+    <!-- ===================== Header / Top bar ===================== -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-logo" aria-hidden="true">🛡️</span>
+        <div class="brand-text">
+          <div class="brand-name">Sentinel<span class="brand-ai">AI</span></div>
+          <div class="brand-sub">คอนโซลป้องกันข้อมูลรั่วสู่ AI</div>
+        </div>
+        <span class="org-chip" id="hdr-org-chip" title="องค์กรของคุณ">
+          <span class="org-ico">🏢</span>
+          <span class="org-name" id="hdr-org">—</span>
+          <span class="plan-chip" id="hdr-plan" hidden></span>
+        </span>
+      </div>
+      <div class="topbar-actions">
+        <span id="ai-pill" class="ai-pill ai-pill--unknown" title="สถานะ AI Engine">
+          <span class="dot"></span><span class="ai-pill-text">กำลังตรวจสอบ…</span>
+        </span>
+        <button id="btn-refresh" class="btn btn-ghost" title="โหลดข้อมูลหน้านี้ใหม่">
+          <span class="ico">⟳</span> รีเฟรช
+        </button>
+        <div class="user-box">
+          <span class="user-email" id="hdr-user" title="ผู้ใช้ที่เข้าสู่ระบบ">—</span>
+          <button id="btn-logout" class="btn btn-ghost btn-sm" title="ออกจากระบบ">
+            <span class="ico">⎋</span> ออกจากระบบ
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="shell">
+      <!-- ===================== Sidebar nav ===================== -->
+      <aside class="sidebar">
+        <nav class="nav" aria-label="เมนูหลัก">
+          <a class="nav-item" href="#overview"      data-route="overview"><span class="nav-ico">📊</span><span>ภาพรวม</span></a>
+          <a class="nav-item" href="#events"        data-route="events"><span class="nav-ico">📋</span><span>เหตุการณ์</span></a>
+          <a class="nav-item" href="#policies"      data-route="policies"><span class="nav-ico">⚖️</span><span>นโยบาย</span></a>
+          <a class="nav-item" href="#fingerprints"  data-route="fingerprints"><span class="nav-ico">📄</span><span>เอกสารลับ</span></a>
+          <a class="nav-item" href="#simulator"     data-route="simulator"><span class="nav-ico">🧪</span><span>ทดสอบระบบ</span></a>
+          <a class="nav-item" href="#response-scan" data-route="response-scan"><span class="nav-ico">🔬</span><span>สแกนคำตอบ AI</span></a>
+          <a class="nav-item" href="#settings"      data-route="settings"><span class="nav-ico">⚙️</span><span>ตั้งค่า &amp; เชื่อมต่อ</span></a>
+        </nav>
+        <div class="sidebar-foot">
+          <div class="sidebar-foot-line">🔒 Privacy-by-Design</div>
+          <div class="sidebar-foot-dim">เก็บเฉพาะ metadata • ไม่เก็บเนื้อหาดิบ (PDPA)</div>
+        </div>
+      </aside>
+
+      <!-- ===================== Main view ===================== -->
+      <main id="view" class="view" tabindex="-1">
+        <!-- เนื้อหาแต่ละแท็บถูกเรนเดอร์ด้วย app.js -->
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast + Modal + Chart tooltip roots -->
+  <div id="toast-root" class="toast-root" aria-live="polite"></div>
+  <div id="modal-root"></div>
+  <div id="chart-tip" class="chart-tip" hidden></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

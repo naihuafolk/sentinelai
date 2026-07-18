@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SentinelAI</title>
+</head>
+<body>
+<style>
+/* ============================================================
+   SentinelAI — Web Console (self-contained, engine runs in-browser)
+   Security Operations aesthetic · committed dark theme · emerald accent
+   ============================================================ */
+:root{
+  --bg:#080d18; --bg-2:#0b1220; --panel:#0f172a; --panel-2:#111c31;
+  --line:#1e293b; --line-2:#243449;
+  --ink:#e6edf7; --ink-dim:#94a3b8; --ink-faint:#64748b;
+  --accent:#10b981; --accent-2:#0ea56f; --accent-ink:#04160e; --accent-glow:rgba(16,185,129,.35);
+  /* semantic (threat) — separate from accent */
+  --public:#64748b; --internal:#3b82f6; --confidential:#f59e0b; --restricted:#ef4444;
+  --allow:#22c55e; --monitor:#64748b; --warn:#f59e0b; --redact:#8b5cf6; --block:#ef4444;
+  --shadow:0 24px 60px rgba(0,0,0,.55);
+  --r:14px; --r-sm:10px;
+  --mono:"JetBrains Mono","Cascadia Code",ui-monospace,Consolas,"Liberation Mono",monospace;
+  --sans:"Segoe UI","Sarabun","Noto Sans Thai",system-ui,-apple-system,Tahoma,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(16,185,129,.10), transparent 60%),
+    radial-gradient(900px 500px at 0% 0%, rgba(59,130,246,.06), transparent 55%),
+    var(--bg);
+  color:var(--ink); font-family:var(--sans); line-height:1.55;
+  -webkit-font-smoothing:antialiased; font-size:15px;
+}
+a{color:inherit;text-decoration:none}
+h1,h2,h3{margin:0; text-wrap:balance; font-weight:750; letter-spacing:-.01em}
+button{font-family:inherit}
+.mono{font-family:var(--mono)}
+.tnum{font-variant-numeric:tabular-nums}
+::selection{background:var(--accent-glow)}
+
+/* ---------- shell ---------- */
+.wrap{max-width:1280px; margin:0 auto; padding:0 20px 80px}
+.topbar{position:sticky; top:0; z-index:40; backdrop-filter:blur(12px);
+  background:linear-gradient(180deg, rgba(8,13,24,.92), rgba(8,13,24,.72));
+  border-bottom:1px solid var(--line);}
+.topbar-in{max-width:1280px; margin:0 auto; padding:12px 20px; display:flex; align-items:center; gap:16px}
+.brand{display:flex; align-items:center; gap:11px}
+.shield{width:34px;height:34px;flex:0 0 auto; filter:drop-shadow(0 0 10px var(--accent-glow))}
+.brand-name{font-size:18px; font-weight:800; letter-spacing:-.02em}
+.brand-name .ai{color:var(--accent)}
+.brand-sub{font-size:11px; color:var(--ink-dim); margin-top:-2px}
+.spacer{flex:1}
+.pill{display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:650;
+  padding:6px 12px; border-radius:999px; border:1px solid var(--line-2); background:var(--panel);}
+.pill .dot{width:8px;height:8px;border-radius:50%}
+.pill.live .dot{background:var(--accent); box-shadow:0 0 8px var(--accent)}
+.pill.offline{color:var(--confidential)}
+.pill.offline .dot{background:var(--confidential)}
+
+/* ---------- nav ---------- */
+.nav{display:flex; gap:4px; overflow-x:auto; padding:14px 0 0; scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav a{padding:9px 15px; border-radius:999px; font-size:13.5px; font-weight:600; color:var(--ink-dim);
+  white-space:nowrap; border:1px solid transparent; display:flex; gap:8px; align-items:center; cursor:pointer; transition:.15s}
+.nav a:hover{color:var(--ink); background:var(--panel)}
+.nav a.on{color:var(--accent); background:rgba(16,185,129,.10); border-color:rgba(16,185,129,.30)}
+.nav a .ic{font-size:15px}
+
+/* ---------- generic ---------- */
+.grid{display:grid; gap:16px}
+.panel{background:linear-gradient(180deg,var(--panel),var(--bg-2)); border:1px solid var(--line);
+  border-radius:var(--r); padding:20px}
+.panel h3{font-size:14px; color:var(--ink); display:flex; align-items:center; gap:8px}
+.eyebrow{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); font-weight:700}
+.section-title{font-size:22px; margin:6px 0 2px}
+.section-desc{color:var(--ink-dim); font-size:13.5px; margin-bottom:18px; max-width:70ch}
+.btn{border:1px solid var(--line-2); background:var(--panel); color:var(--ink); padding:9px 15px;
+  border-radius:var(--r-sm); font-size:13.5px; font-weight:650; cursor:pointer; transition:.15s; display:inline-flex; gap:8px; align-items:center}
+.btn:hover{border-color:var(--accent); color:#fff}
+.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.sm{padding:6px 11px; font-size:12.5px}
+.hidden{display:none !important}
+
+/* badges */
+.badge{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; white-space:nowrap}
+.badge::before{content:""; width:7px; height:7px; border-radius:50%; background:currentColor}
+.lbl-Public{color:var(--public); background:rgba(100,116,139,.14)}
+.lbl-Internal{color:var(--internal); background:rgba(59,130,246,.14)}
+.lbl-Confidential{color:var(--confidential); background:rgba(245,158,11,.14)}
+.lbl-Restricted{color:var(--restricted); background:rgba(239,68,68,.14)}
+.dec-allow{color:var(--allow); background:rgba(34,197,94,.14)}
+.dec-monitor{color:var(--monitor); background:rgba(100,116,139,.16)}
+.dec-warn{color:var(--warn); background:rgba(245,158,11,.14)}
+.dec-redact{color:var(--redact); background:rgba(139,92,246,.16)}
+.dec-block{color:var(--block); background:rgba(239,68,68,.16)}
+.chip{font-size:11px; color:var(--ink-dim); background:var(--bg-2); border:1px solid var(--line);
+  padding:2px 8px; border-radius:6px; font-family:var(--mono)}
+
+/* ---------- hero (overview) ---------- */
+.kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:16px}
+.kpi{position:relative; overflow:hidden}
+.kpi .k-top{display:flex; justify-content:space-between; align-items:flex-start}
+.kpi .k-ic{font-size:20px; opacity:.9}
+.kpi .k-num{font-size:34px; font-weight:820; letter-spacing:-.03em; margin-top:6px; line-height:1}
+.kpi .k-lbl{color:var(--ink-dim); font-size:12.5px; margin-top:8px}
+.kpi .k-spark{position:absolute; right:0; bottom:0; left:0; height:34px; opacity:.9}
+.kpi.accent .k-num{color:var(--accent)}
+.kpi.danger .k-num{color:var(--restricted)}
+
+.cols{display:grid; grid-template-columns:1.55fr 1fr; gap:16px}
+.legend{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--ink-dim); margin-top:6px}
+.legend i{display:inline-block; width:20px; height:3px; border-radius:2px; vertical-align:middle; margin-right:6px}
+
+/* table */
+.tbl{width:100%; border-collapse:collapse; font-size:13px}
+.tbl th{text-align:left; color:var(--ink-faint); font-weight:650; font-size:11px; letter-spacing:.06em;
+  text-transform:uppercase; padding:10px 12px; border-bottom:1px solid var(--line)}
+.tbl td{padding:11px 12px; border-bottom:1px solid var(--line); color:var(--ink)}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+.tbl .u{font-family:var(--mono); font-size:12.5px; color:var(--ink-dim)}
+.tbl-wrap{overflow-x:auto}
+.risk-cell{display:flex; align-items:center; gap:8px}
+.risk-bar{width:46px; height:6px; border-radius:3px; background:var(--line); overflow:hidden; flex:0 0 auto}
+.risk-bar i{display:block; height:100%}
+
+/* ---------- simulator (the hero interaction) ---------- */
+.sim-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start}
+.sim-input{width:100%; min-height:230px; resize:vertical; background:var(--bg-2); color:var(--ink);
+  border:1px solid var(--line-2); border-radius:var(--r-sm); padding:14px; font-family:var(--mono); font-size:13.5px; line-height:1.6}
+.sim-input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(16,185,129,.12)}
+.samples{display:flex; gap:8px; flex-wrap:wrap; margin:12px 0}
+.samples button{font-size:12px; padding:6px 11px; border-radius:8px; border:1px solid var(--line-2);
+  background:var(--panel); color:var(--ink-dim); cursor:pointer}
+.samples button:hover{color:#fff; border-color:var(--accent)}
+.controls{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:6px}
+.select{background:var(--bg-2); color:var(--ink); border:1px solid var(--line-2); border-radius:8px; padding:8px 10px; font-size:13px; font-family:inherit}
+
+.verdict{display:flex; align-items:center; gap:16px}
+.gauge{position:relative; width:120px; height:120px; flex:0 0 auto}
+.gauge svg{width:100%; height:100%; display:block}
+.gauge .g-num{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center}
+.gauge .g-num b{font-size:30px; font-weight:820; letter-spacing:-.03em}
+.gauge .g-num span{font-size:10px; color:var(--ink-faint); letter-spacing:.1em; text-transform:uppercase}
+.verdict-meta{flex:1}
+.verdict-dec{font-size:20px; font-weight:800; margin-top:4px}
+.det-list{display:flex; flex-direction:column; gap:8px; margin-top:14px}
+.det{display:flex; align-items:center; gap:10px; padding:9px 12px; background:var(--bg-2); border:1px solid var(--line); border-radius:9px}
+.det .d-eng{font-size:10px; padding:2px 7px; border-radius:5px; font-weight:700; letter-spacing:.04em}
+.eng-regex{background:rgba(59,130,246,.15); color:var(--internal)}
+.eng-fingerprint{background:rgba(139,92,246,.15); color:var(--redact)}
+.eng-ai{background:rgba(16,185,129,.15); color:var(--accent)}
+.det .d-val{font-family:var(--mono); font-size:12.5px; color:var(--ink); margin-left:auto}
+.reasons{margin:14px 0 0; padding:12px 14px; background:var(--bg-2); border:1px solid var(--line); border-radius:9px; font-size:13px}
+.reasons ul{margin:6px 0 0; padding-left:18px} .reasons li{margin:3px 0; color:var(--ink-dim)}
+.redacted{margin-top:12px; font-size:13px; white-space:pre-wrap; word-break:break-word; background:rgba(139,92,246,.06);
+  border:1px dashed rgba(139,92,246,.5); border-radius:9px; padding:12px 14px; color:#ddd6fe; max-height:150px; overflow:auto}
+.redacted mark{background:rgba(139,92,246,.35); color:#fff; border-radius:4px; padding:0 3px}
+
+/* policy rows */
+.pol{display:flex; align-items:center; gap:14px; padding:14px 16px; border:1px solid var(--line); border-radius:var(--r-sm); background:var(--bg-2)}
+.pol .p-pri{font-family:var(--mono); font-size:12px; color:var(--ink-faint); width:34px; text-align:center; flex:0 0 auto}
+.pol .p-body{flex:1; min-width:0}
+.pol .p-name{font-weight:700; font-size:14px}
+.pol .p-rule{font-size:12.5px; color:var(--ink-dim); margin-top:3px}
+.pol .p-rule b{color:var(--ink)}
+
+/* fingerprints */
+.fp{display:flex; align-items:center; gap:12px; padding:13px 15px; border:1px solid var(--line); border-radius:var(--r-sm); background:var(--bg-2)}
+.fp .f-ic{font-size:20px}
+
+/* about / models */
+.model-tbl td{padding:10px 12px; border-bottom:1px solid var(--line)}
+.kv{display:grid; grid-template-columns:auto 1fr; gap:8px 18px; font-size:13.5px}
+.kv dt{color:var(--ink-faint)} .kv dd{margin:0; font-family:var(--mono); color:var(--ink)}
+.callout{border-left:3px solid var(--accent); background:rgba(16,185,129,.07); padding:12px 16px; border-radius:0 10px 10px 0; font-size:13.5px; color:#a7f3d0}
+.steps{counter-reset:s; display:flex; flex-direction:column; gap:12px; margin-top:6px}
+.step{display:flex; gap:12px} .step::before{counter-increment:s; content:counter(s); flex:0 0 auto;
+  width:26px; height:26px; border-radius:50%; background:var(--accent); color:var(--accent-ink); font-weight:800;
+  display:grid; place-items:center; font-size:13px}
+
+/* ---------- interception modal (product moment) ---------- */
+.overlay{position:fixed; inset:0; z-index:100; background:rgba(3,7,18,.72); backdrop-filter:blur(4px);
+  display:grid; place-items:center; padding:20px; animation:fade .15s ease}
+.modal{width:470px; max-width:100%; background:var(--panel); border:1px solid var(--line-2); border-radius:16px;
+  overflow:hidden; box-shadow:var(--shadow); animation:pop .2s cubic-bezier(.2,.9,.3,1.2)}
+.modal .m-top{height:5px}
+.modal .m-body{padding:22px 24px 6px}
+.modal .m-head{display:flex; gap:13px; align-items:flex-start}
+.modal .m-ic{font-size:28px}
+.modal .m-brand{font-size:11px; font-weight:800; letter-spacing:.1em; color:var(--accent)}
+.modal .m-title{font-size:18px; font-weight:800; margin-top:2px}
+.modal .m-msg{font-size:14px; color:var(--ink-dim); margin-top:12px}
+.modal .m-badges{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px}
+.modal .m-actions{display:flex; gap:10px; padding:16px 24px 22px; flex-wrap:wrap}
+.modal .m-actions .btn{flex:1; justify-content:center; min-width:130px}
+.modal .m-foot{text-align:center; font-size:11px; color:var(--ink-faint); padding:0 24px 16px}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{transform:translateY(10px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+
+/* toast */
+.toasts{position:fixed; right:18px; bottom:18px; z-index:120; display:flex; flex-direction:column; gap:8px}
+.toast{background:var(--panel); border:1px solid var(--line-2); border-left:3px solid var(--accent);
+  border-radius:10px; padding:11px 15px; font-size:13px; box-shadow:var(--shadow); animation:pop .2s ease; max-width:330px}
+.toast b{color:var(--accent); font-size:11px; letter-spacing:.06em}
+
+.foot{margin-top:40px; padding-top:20px; border-top:1px solid var(--line); color:var(--ink-faint); font-size:12.5px; text-align:center}
+
+/* responsive */
+@media (max-width:1024px){ .kpis{grid-template-columns:repeat(2,1fr)} .cols{grid-template-columns:1fr} .sim-grid{grid-template-columns:1fr} }
+@media (max-width:560px){ .kpis{grid-template-columns:1fr} .section-title{font-size:19px} }
+@media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important} }
+
+/* ---- auth (login/signup) ---- */
+#auth-screen{position:fixed; inset:0; z-index:200; display:grid; place-items:center; padding:20px; overflow:auto;
+  background:radial-gradient(1000px 500px at 50% -10%, rgba(16,185,129,.13), transparent 60%), var(--bg)}
+.auth-card{width:420px; max-width:100%; background:linear-gradient(180deg,var(--panel),var(--bg-2));
+  border:1px solid var(--line); border-radius:18px; padding:32px 30px; box-shadow:var(--shadow)}
+.auth-brand{display:flex; align-items:center; gap:11px; justify-content:center}
+.auth-brand svg{width:40px; height:40px}
+.auth-brand b{font-size:23px; font-weight:850; letter-spacing:-.02em}
+.auth-brand b span{color:var(--accent)}
+.auth-sub{text-align:center; color:var(--ink-dim); font-size:13px; margin:8px 0 22px}
+.auth-tabs{display:flex; gap:5px; background:var(--bg-2); border:1px solid var(--line); border-radius:11px; padding:4px; margin-bottom:20px}
+.auth-tabs button{flex:1; padding:10px; border:none; background:transparent; color:var(--ink-dim); font-weight:700; font-size:14px; border-radius:8px; cursor:pointer; font-family:inherit}
+.auth-tabs button.on{background:var(--accent); color:var(--accent-ink)}
+.auth-field{margin-bottom:14px}
+.auth-field label{display:block; font-size:12.5px; color:var(--ink-dim); margin-bottom:6px; font-weight:600}
+.auth-field input{width:100%; padding:12px 13px; background:var(--bg-2); border:1px solid var(--line-2); border-radius:9px; color:var(--ink); font-size:14px; font-family:inherit}
+.auth-field input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(16,185,129,.12)}
+.auth-btn{width:100%; padding:13px; border:none; border-radius:10px; background:var(--accent); color:var(--accent-ink); font-weight:800; font-size:15px; cursor:pointer; margin-top:6px; font-family:inherit}
+.auth-btn:hover{filter:brightness(1.08)}
+.auth-err{background:rgba(239,68,68,.1); border:1px solid var(--restricted); color:#fca5a5; font-size:13px; padding:10px 12px; border-radius:8px; margin-bottom:14px}
+.auth-foot{text-align:center; font-size:11px; color:var(--ink-faint); margin-top:18px; line-height:1.6}
+.hdr-user{display:flex; align-items:center; gap:10px; margin-left:10px}
+.hdr-org{font-size:13px; color:var(--ink); font-weight:700; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.hdr-logout{font-size:12px; color:var(--ink-dim); background:transparent; border:1px solid var(--line-2); border-radius:8px; padding:6px 11px; cursor:pointer; font-family:inherit}
+.hdr-logout:hover{color:#fff; border-color:var(--accent)}
+.key-box{display:flex; gap:10px; align-items:center; background:var(--bg-2); border:1px solid var(--line-2); border-radius:10px; padding:13px 15px; margin-top:12px}
+.key-box code{flex:1; font-family:var(--mono); font-size:13px; color:var(--accent); word-break:break-all}
+
+/* ---- visual install mockups (ภาพตัวอย่างทีละขั้น) ---- */
+.vsteps{display:flex; flex-direction:column; margin-top:10px}
+.vstep{display:grid; grid-template-columns:minmax(0,0.9fr) minmax(0,1.1fr); gap:24px; align-items:center; padding:22px 2px; border-top:1px solid var(--line)}
+.vstep:first-of-type{border-top:none; padding-top:8px}
+.vnum{width:30px; height:30px; border-radius:9px; background:var(--accent); color:var(--accent-ink); font-weight:850; display:grid; place-items:center; font-size:15px; margin-bottom:10px}
+.vstep h4{font-size:16px; margin-bottom:6px}
+.vtxt p{color:var(--ink-dim); font-size:13.5px; line-height:1.6}
+.mk{border-radius:12px; overflow:hidden; border:1px solid var(--line-2); box-shadow:0 12px 34px rgba(0,0,0,.45)}
+.mk-bar{display:flex; align-items:center; gap:7px; padding:9px 13px; background:#e9edf2}
+.mk-bar.dk{background:#1a2431}
+.mk .d{width:11px; height:11px; border-radius:50%; flex:0 0 auto}
+.d.r{background:#ff5f57}.d.y{background:#febc2e}.d.g{background:#28c840}
+.mk-url{margin-left:8px; flex:1; background:#fff; border:1px solid #dbe2e9; border-radius:7px; padding:5px 12px; font-size:12px; color:#556; font-family:var(--mono); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.mk-tt{margin-left:8px; color:#7d90a3; font-size:12px; font-family:var(--mono)}
+.mk-b{padding:16px; background:#f5f7f9; color:#1f2a36; font-size:13px; min-height:96px; display:flex; flex-direction:column; justify-content:center; gap:10px}
+.mk-row{display:flex; align-items:center; justify-content:space-between; gap:10px}
+.mk-tog{display:flex; align-items:center; gap:9px; font-size:12.5px; color:#0b7f50; font-weight:700; background:#eaf7f0; border:1px solid #10b981; border-radius:8px; padding:6px 11px; box-shadow:0 0 0 3px rgba(16,185,129,.15)}
+.mk-tog .sw{width:34px; height:18px; border-radius:99px; background:#10b981; position:relative; flex:0 0 auto}
+.mk-tog .sw::after{content:""; position:absolute; width:14px; height:14px; border-radius:50%; background:#fff; top:2px; right:2px}
+.mk-btns{display:flex; gap:8px; flex-wrap:wrap}
+.mk-btn{font-size:12px; padding:6px 12px; border-radius:7px; border:1px solid #cfd8e0; background:#fff; color:#456; font-weight:600}
+.mk-btn.hi{background:#10b981; border-color:#10b981; color:#052e1a; box-shadow:0 0 0 3px rgba(16,185,129,.18)}
+.mk-folder{font-size:12.5px; color:#556; background:#fff; border:1px dashed #b9c4cf; border-radius:8px; padding:8px 12px}
+.mk-lab{color:#94a3b8; font-size:11px; margin:0 0 4px}
+.mk-inp{background:#0b1220; border:1px solid #334155; border-radius:7px; padding:8px 10px; font-family:var(--mono); font-size:12px; color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.mk-inp.hi{border-color:#10b981; color:#34d399; box-shadow:0 0 0 3px rgba(16,185,129,.2)}
+.mk-chat{background:#fff; position:relative; min-height:140px}
+.mk-chat .head{padding:8px 12px; border-bottom:1px solid #e5e7eb; font-weight:700; color:#374151; font-size:12px}
+.mk-chat .field{margin:12px; border:1px solid #e5e7eb; border-radius:10px; padding:10px; color:#9ca3af; font-size:12px}
+.mk-pop{position:absolute; inset:0; background:rgba(2,6,23,.5); display:flex; align-items:center; justify-content:center; padding:14px}
+.mk-pop .card{width:100%; max-width:300px; background:#0f172a; border:1px solid #1e293b; border-radius:12px; overflow:hidden; box-shadow:0 16px 40px rgba(0,0,0,.5)}
+.mk-pop .top{height:4px; background:#ef4444}
+.mk-pop .cin{padding:12px 14px}
+.mk-pop .cin .t{font-size:13px; font-weight:800; color:#fff}
+.mk-pop .cin .s{font-size:11px; color:#94a3b8; margin-top:4px; line-height:1.5}
+.mk-pop .cin .cb{display:flex; gap:6px; margin-top:10px}
+.mk-pop .cin .cb span{font-size:10.5px; padding:4px 10px; border-radius:6px}
+.mk-term{background:#0b1220}
+.mk-term .tb{padding:14px; font-family:var(--mono); font-size:12px; line-height:1.75; color:#cbd5e1; min-height:96px}
+.mk-term .pr{color:#10b981}
+.mk-term .ok{color:#34d399}
+.mk-term .dim2{color:#64748b}
+@media (max-width:820px){ .vstep{grid-template-columns:1fr; gap:14px} }
+
+/* ============================================================
+   ✦ PREMIUM MOTION LAYER — additive overrides (cinematic glass + aurora)
+   ============================================================ */
+html{overflow-x:clip}
+body{
+  background:
+    radial-gradient(1200px 620px at 82% -12%, rgba(16,185,129,.10), transparent 60%),
+    radial-gradient(1000px 560px at 0% 4%, rgba(56,189,248,.06), transparent 55%),
+    radial-gradient(900px 720px at 50% 122%, rgba(99,102,241,.07), transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+}
+
+/* --- animated aurora backdrop (behind everything) --- */
+.fx{position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none}
+.fx-blob{position:absolute; border-radius:50%; filter:blur(74px); opacity:.55; will-change:transform}
+.fx-blob.b1{width:56vw; height:56vw; left:-14vw; top:-16vw;
+  background:radial-gradient(circle at 32% 32%, rgba(16,185,129,.55), transparent 66%); animation:drift1 26s ease-in-out infinite}
+.fx-blob.b2{width:48vw; height:48vw; right:-14vw; top:-4vw;
+  background:radial-gradient(circle at 50% 50%, rgba(20,184,166,.42), transparent 66%); animation:drift2 32s ease-in-out infinite}
+.fx-blob.b3{width:52vw; height:52vw; left:26vw; bottom:-26vw;
+  background:radial-gradient(circle at 50% 50%, rgba(99,102,241,.34), transparent 66%); animation:drift3 30s ease-in-out infinite}
+.fx-grid{position:absolute; inset:0; opacity:.5;
+  background-image:linear-gradient(rgba(148,163,184,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.045) 1px,transparent 1px);
+  background-size:46px 46px;
+  -webkit-mask-image:radial-gradient(1000px 620px at 50% -6%, #000, transparent 72%);
+  mask-image:radial-gradient(1000px 620px at 50% -6%, #000, transparent 72%)}
+@keyframes drift1{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(6vw,4vh,0) scale(1.12)}}
+@keyframes drift2{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-5vw,6vh,0) scale(1.15)}}
+@keyframes drift3{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(4vw,-5vh,0) scale(1.1)}}
+
+/* --- glassmorphism panels --- */
+.panel{
+  position:relative;
+  background:linear-gradient(165deg, rgba(20,32,56,.72), rgba(11,18,32,.60));
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:16px;
+  backdrop-filter:blur(16px) saturate(140%); -webkit-backdrop-filter:blur(16px) saturate(140%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 20px 44px -28px rgba(0,0,0,.85);
+  transition:transform .28s cubic-bezier(.22,.61,.36,1), box-shadow .28s ease, border-color .28s ease;
+}
+.panel:hover{
+  transform:translateY(-3px);
+  border-color:rgba(16,185,129,.26);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 30px 60px -30px rgba(0,0,0,.9), 0 0 26px -6px var(--accent-glow);
+}
+.panel h3{letter-spacing:-.01em}
+
+/* --- KPI cards: corner glow + gradient numerals --- */
+.kpi{overflow:hidden}
+.kpi::after{content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background:radial-gradient(150px 96px at 88% -14%, rgba(16,185,129,.16), transparent 62%)}
+.kpi .k-num{background:linear-gradient(180deg,#ffffff,#cdd8e8); -webkit-background-clip:text; background-clip:text; color:transparent}
+.kpi.accent .k-num{background:linear-gradient(180deg,#6ee7b7,#10b981); -webkit-background-clip:text; background-clip:text; color:transparent}
+.kpi.danger .k-num{background:linear-gradient(180deg,#fca5a5,#ef4444); -webkit-background-clip:text; background-clip:text; color:transparent}
+
+/* --- kinetic typography --- */
+.section-title{
+  font-size:clamp(24px,3.2vw,34px); line-height:1.12; font-weight:840; letter-spacing:-.035em; margin:10px 0 4px;
+  background:linear-gradient(96deg,#ffffff 22%, #7ff0c8 118%); -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.eyebrow{display:inline-flex; align-items:center; gap:9px; color:#5eead4; letter-spacing:.16em}
+.eyebrow::before{content:""; width:22px; height:2px; border-radius:2px; background:linear-gradient(90deg,var(--accent),transparent)}
+.page-head{position:relative}
+
+/* --- brand / logo --- */
+.brand-name{background:linear-gradient(96deg,#ffffff,#a7f3d0); -webkit-background-clip:text; background-clip:text; color:transparent}
+.brand-name .ai{-webkit-text-fill-color:var(--accent); color:var(--accent)}
+.shield{animation:floaty 6s ease-in-out infinite}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
+/* --- topbar deeper glass --- */
+.topbar{background:linear-gradient(180deg, rgba(8,13,24,.82), rgba(8,13,24,.52));
+  backdrop-filter:blur(16px) saturate(150%); -webkit-backdrop-filter:blur(16px) saturate(150%);
+  border-bottom:1px solid rgba(255,255,255,.06)}
+
+/* --- nav pills --- */
+.nav a{transition:transform .2s cubic-bezier(.4,0,.2,1), background .2s, color .2s, box-shadow .2s, border-color .2s}
+.nav a:hover{color:var(--ink); background:rgba(255,255,255,.05); transform:translateY(-1px)}
+.nav a.on{color:var(--accent); background:rgba(16,185,129,.12); border-color:rgba(16,185,129,.34);
+  box-shadow:0 0 0 1px rgba(16,185,129,.14), 0 8px 20px -10px var(--accent-glow)}
+
+/* --- buttons --- */
+.btn{transition:transform .18s cubic-bezier(.4,0,.2,1), box-shadow .2s, border-color .2s, color .2s, filter .2s}
+.btn:hover{border-color:var(--accent); color:#fff; transform:translateY(-1px); box-shadow:0 10px 24px -12px var(--accent-glow)}
+.btn:active{transform:translateY(0)}
+.btn.primary{box-shadow:0 10px 26px -12px var(--accent-glow)}
+.btn.primary:hover{filter:brightness(1.08); box-shadow:0 16px 34px -12px var(--accent-glow)}
+
+/* --- scroll reveal --- */
+.reveal{opacity:0; transform:translateY(20px);
+  transition:opacity .55s cubic-bezier(.22,.61,.36,1), transform .55s cubic-bezier(.22,.61,.36,1)}
+.reveal.in{opacity:1; transform:none}
+
+/* --- auth premium (glass card floating over aurora) --- */
+#auth-screen{background:transparent}
+.auth-card{
+  background:linear-gradient(165deg, rgba(20,32,56,.78), rgba(11,18,32,.72));
+  border:1px solid rgba(255,255,255,.09);
+  backdrop-filter:blur(22px) saturate(150%); -webkit-backdrop-filter:blur(22px) saturate(150%);
+  box-shadow:0 40px 90px -34px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.06);
+  animation:authIn .6s cubic-bezier(.22,.61,.36,1) both;
+}
+@keyframes authIn{from{opacity:0; transform:translateY(22px) scale(.985)}to{opacity:1; transform:none}}
+.auth-brand svg{filter:drop-shadow(0 0 14px var(--accent-glow)); animation:floaty 6s ease-in-out infinite}
+.auth-brand b{background:linear-gradient(96deg,#ffffff,#a7f3d0); -webkit-background-clip:text; background-clip:text; color:transparent}
+.auth-brand b span{-webkit-text-fill-color:var(--accent)}
+.auth-btn{transition:filter .2s, box-shadow .2s, transform .18s; box-shadow:0 12px 30px -12px var(--accent-glow)}
+.auth-btn:hover{filter:brightness(1.08); transform:translateY(-1px); box-shadow:0 18px 40px -12px var(--accent-glow)}
+
+/* --- download buttons (setup) --- */
+.dl-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px}
+.dl-row .btn{padding:11px 17px; font-size:14px}
+.btn.dl-secondary{background:rgba(16,185,129,.08); border-color:rgba(16,185,129,.4); color:#6ee7b7}
+.btn.dl-secondary:hover{background:rgba(16,185,129,.14); color:#fff}
+
+/* ============================================================
+   👑 SUPER ADMIN — platform-owner god view (amber accent)
+   ============================================================ */
+.sa-eyebrow{color:#fbbf24}
+.sa-eyebrow::before{background:linear-gradient(90deg,#f59e0b,transparent)}
+.sa-title{background:linear-gradient(96deg,#ffffff 20%, #fbbf24 122%); -webkit-background-clip:text; background-clip:text; color:transparent}
+.sa-kpis{grid-template-columns:repeat(6,1fr)}
+.sa-kpi::after{background:radial-gradient(150px 96px at 88% -14%, rgba(251,191,36,.18), transparent 62%)}
+.sa-kpi .k-num{background:none; -webkit-background-clip:border-box; background-clip:border-box; -webkit-text-fill-color:currentColor; color:#fcd34d}
+.sa-kpi.ok .k-num{color:var(--allow)}
+.sa-kpi.tr .k-num{color:var(--internal)}
+.sa-kpi.sp .k-num{color:var(--restricted)}
+.sa-panel{border-color:rgba(251,191,36,.16)}
+.sa-panel:hover{border-color:rgba(251,191,36,.34); box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 30px 60px -30px rgba(0,0,0,.9), 0 0 26px -6px rgba(251,191,36,.35)}
+.sa-panel > h3{color:#fcd34d}
+.sa-id{font-size:11px; color:var(--ink-faint); margin-top:2px}
+.sa-plan{display:inline-block; font-size:12px; font-weight:700; padding:2px 11px; border-radius:999px; border:1px solid var(--line-2); color:var(--ink-dim); background:var(--bg-2)}
+.sa-st{display:inline-block; font-size:12px; font-weight:750; padding:3px 12px; border-radius:999px}
+.sa-Active{color:var(--allow); background:rgba(34,197,94,.14)}
+.sa-Trial{color:var(--internal); background:rgba(59,130,246,.14)}
+.sa-Suspended{color:var(--restricted); background:rgba(239,68,68,.14)}
+.sa-seatbar{width:74px; height:5px; border-radius:3px; background:var(--line); overflow:hidden; margin-top:6px}
+.sa-seatbar i{display:block; height:100%; background:linear-gradient(90deg,#fbbf24,#f59e0b)}
+.sa-actions{display:flex; gap:6px; flex-wrap:wrap}
+.sa-suspend:hover{border-color:var(--restricted); color:#fca5a5; box-shadow:0 10px 24px -12px rgba(239,68,68,.5)}
+.sa-resume{border-color:rgba(34,197,94,.45); color:#86efac}
+.sa-resume:hover{border-color:var(--allow); color:#fff; box-shadow:0 10px 24px -12px rgba(34,197,94,.5)}
+.sa-feed{display:flex; flex-direction:column; gap:9px}
+.sa-feed-row{display:flex; gap:13px; align-items:center; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--bg-2); transition:transform .2s, border-color .2s}
+.sa-feed-row:hover{border-color:rgba(251,191,36,.3); transform:translateX(3px)}
+.sa-sev{flex:0 0 auto; width:44px; height:44px; border-radius:12px; display:grid; place-items:center; font-weight:820; font-family:var(--mono); font-size:14px}
+.sev-Restricted{color:var(--restricted); background:rgba(239,68,68,.15)}
+.sev-Confidential{color:var(--confidential); background:rgba(245,158,11,.15)}
+.sa-feed-main{flex:1; min-width:0}
+.sa-feed-top{display:flex; gap:9px; align-items:center; flex-wrap:wrap}
+.sa-feed-sub{font-size:12px; color:var(--ink-faint); margin-top:3px}
+@media (max-width:1024px){ .sa-kpis{grid-template-columns:repeat(3,1fr)} }
+@media (max-width:560px){ .sa-kpis{grid-template-columns:repeat(2,1fr)} }
+
+/* --- reduced motion: kill drift + keep content visible --- */
+@media (prefers-reduced-motion:reduce){
+  .fx-blob,.shield,.auth-brand svg{animation:none !important}
+  .reveal{opacity:1 !important; transform:none !important}
+}
+</style>
+
+<div class="fx" aria-hidden="true">
+  <span class="fx-blob b1"></span>
+  <span class="fx-blob b2"></span>
+  <span class="fx-blob b3"></span>
+  <span class="fx-grid"></span>
+</div>
+
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <path d="M24 3l17 6v10c0 11-7.3 19.4-17 23-9.7-3.6-17-12-17-23V9l17-6z" fill="#10b981" opacity=".18"/>
+        <path d="M24 3l17 6v10c0 11-7.3 19.4-17 23-9.7-3.6-17-12-17-23V9l17-6z" stroke="#10b981" stroke-width="2"/>
+        <path d="M16 24l6 6 11-13" stroke="#10b981" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <b>Sentinel<span>AI</span></b>
+    </div>
+    <div class="auth-sub">แพลตฟอร์มป้องกันข้อมูลลับองค์กรรั่วไหลสู่ AI</div>
+    <div class="auth-tabs">
+      <button id="tab-login" class="on" type="button">เข้าสู่ระบบ</button>
+      <button id="tab-signup" type="button">สมัครใช้งาน</button>
+    </div>
+    <div class="auth-err" id="auth-err" style="display:none"></div>
+    <form id="auth-form">
+      <div class="auth-field su" style="display:none"><label>ชื่อองค์กร/บริษัท</label><input id="f-org" placeholder="บริษัท ของฉัน จำกัด"></div>
+      <div class="auth-field su" style="display:none"><label>ชื่อผู้ดูแล</label><input id="f-name" placeholder="ชื่อ-นามสกุล"></div>
+      <div class="auth-field"><label>อีเมล</label><input id="f-email" type="email" placeholder="you@company.co.th"></div>
+      <div class="auth-field"><label>รหัสผ่าน</label><input id="f-pw" type="password" placeholder="อย่างน้อย 6 ตัวอักษร"></div>
+      <button class="auth-btn" id="auth-submit" type="submit">เข้าสู่ระบบ</button>
+    </form>
+    <div class="auth-foot">🔒 นี่คือเดโม — บัญชีถูกเก็บในเบราว์เซอร์ของคุณเท่านั้น ไม่ส่งขึ้นเซิร์ฟเวอร์<br>สมัครได้เลย ไม่ต้องใช้อีเมลจริง</div>
+  </div>
+</div>
+
+<header class="topbar" style="display:none">
+  <div class="topbar-in">
+    <div class="brand">
+      <svg class="shield" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <path d="M24 3l17 6v10c0 11-7.3 19.4-17 23-9.7-3.6-17-12-17-23V9l17-6z" fill="#10b981" opacity=".18"/>
+        <path d="M24 3l17 6v10c0 11-7.3 19.4-17 23-9.7-3.6-17-12-17-23V9l17-6z" stroke="#10b981" stroke-width="2"/>
+        <path d="M16 24l6 6 11-13" stroke="#10b981" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div>
+        <div class="brand-name">Sentinel<span class="ai">AI</span></div>
+        <div class="brand-sub">ป้องกันข้อมูลลับรั่วไหลสู่ AI · AI-DLP</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <span class="pill live" id="engine-pill"><span class="dot"></span> Engine ในเบราว์เซอร์</span>
+    <div class="hdr-user" id="hdr-user">
+      <span class="hdr-org" id="hdr-org"></span>
+      <button class="hdr-logout" id="btn-logout" type="button">ออกจากระบบ</button>
+    </div>
+  </div>
+  <div class="topbar-in" style="padding-top:0">
+    <nav class="nav" id="nav">
+      <a data-r="overview" class="on"><span class="ic">📊</span> ภาพรวม</a>
+      <a data-r="simulator"><span class="ic">🧪</span> ทดสอบระบบ</a>
+      <a data-r="events"><span class="ic">📋</span> เหตุการณ์</a>
+      <a data-r="policies"><span class="ic">⚖️</span> นโยบาย</a>
+      <a data-r="fingerprints"><span class="ic">📄</span> เอกสารลับ</a>
+      <a data-r="devices"><span class="ic">💻</span> อุปกรณ์</a>
+      <a data-r="setup"><span class="ic">🔌</span> ติดตั้ง &amp; ตั้งค่า</a>
+      <a data-r="superadmin"><span class="ic">👑</span> Super Admin</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" id="view" style="display:none"></main>
+
+<div class="toasts" id="toasts"></div>
+<div id="modal-root"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   1) DETECTION ENGINE  (ported from the Python backend, runs in-browser)
+   ============================================================ */
+const LABELS = ["Public","Internal","Confidential","Restricted"];
+const LORDER = {Public:0,Internal:1,Confidential:2,Restricted:3};
+const CAT_TH = {financial:"การเงิน",pii:"ส่วนบุคคล (PII)",secret:"ความลับทางเทคนิค",legal:"สัญญา/กฎหมาย",code:"ซอร์สโค้ด",business:"ธุรกิจ/กลยุทธ์",general:"ทั่วไป"};
+
+function validThaiId(raw){
+  const d=(raw.match(/\d/g)||[]).join("");
+  if(d.length!==13) return false;
+  if(d===d[0].repeat(13)) return false;
+  let sum=0; for(let i=0;i<12;i++) sum+=parseInt(d[i])*(13-i);
+  return ((11-(sum%11))%10)===parseInt(d[12]);
+}
+function validLuhn(raw){
+  const d=(raw.match(/\d/g)||[]).map(Number);
+  if(d.length<13||d.length>19) return false;
+  let sum=0, par=d.length%2;
+  for(let i=0;i<d.length;i++){let x=d[i]; if(i%2===par){x*=2; if(x>9)x-=9;} sum+=x;}
+  return sum%10===0;
+}
+const maskMid=(s,a=2,b=2)=>{const c=s.replace(/\s+/g,""); return c.length<=a+b?"•".repeat(c.length):c.slice(0,a)+"•".repeat(c.length-a-b)+c.slice(-b);};
+const maskSecret=s=>{s=s.trim(); return s.length<=8?"•".repeat(s.length):s.slice(0,4)+"•".repeat(Math.max(2,s.length-8))+s.slice(-4);};
+const maskEmail=s=>{const m=s.match(/([^@]+)@(.+)/); if(!m)return"•••"; return m[1][0]+"•".repeat(Math.max(1,m[1].length-1))+"@"+m[2];};
+
+const PATTERNS=[
+  {type:"aws_access_key",cat:"secret",label:"Restricted",weight:85,hard:true,re:/\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g,reason:"พบ AWS Access Key",mask:maskSecret},
+  {type:"anthropic_key",cat:"secret",label:"Restricted",weight:85,hard:true,re:/\bsk-ant-[A-Za-z0-9_\-]{20,}\b/g,reason:"พบ Anthropic API Key",mask:maskSecret},
+  {type:"openai_key",cat:"secret",label:"Restricted",weight:85,hard:true,re:/\bsk-(?:proj-)?[A-Za-z0-9_\-]{20,}\b/g,reason:"พบ OpenAI/LLM API Key",mask:maskSecret},
+  {type:"google_api_key",cat:"secret",label:"Restricted",weight:80,hard:true,re:/\bAIza[0-9A-Za-z\-_]{35}\b/g,reason:"พบ Google API Key",mask:maskSecret},
+  {type:"github_token",cat:"secret",label:"Restricted",weight:85,hard:true,re:/\bgh[pousr]_[A-Za-z0-9]{36,}\b/g,reason:"พบ GitHub Token",mask:maskSecret},
+  {type:"slack_token",cat:"secret",label:"Restricted",weight:80,hard:true,re:/\bxox[baprs]-[A-Za-z0-9\-]{10,}\b/g,reason:"พบ Slack Token",mask:maskSecret},
+  {type:"private_key",cat:"secret",label:"Restricted",weight:90,hard:true,re:/-----BEGIN (?:RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----/g,reason:"พบ Private Key (คีย์เข้ารหัสส่วนตัว)",mask:()=>"-----BEGIN PRIVATE KEY----- •••"},
+  {type:"jwt",cat:"secret",label:"Confidential",weight:60,hard:true,re:/\beyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\b/g,reason:"พบ JWT / Access Token",mask:maskSecret},
+  {type:"db_connection",cat:"secret",label:"Restricted",weight:80,hard:true,re:/\b(?:mongodb(?:\+srv)?|postgres(?:ql)?|mysql|redis):\/\/[^\s'"]+:[^\s'"]+@[^\s'"]+/g,reason:"พบ Database connection string (มีรหัสผ่าน)",mask:s=>s.replace(/:\/\/[^@]+@/,"://••••@")},
+  {type:"generic_secret_assign",cat:"secret",label:"Confidential",weight:55,hard:true,re:/\b(?:api[_-]?key|secret|password|passwd|pwd|token|client[_-]?secret|access[_-]?key)\b\s*[:=]\s*['"]?[A-Za-z0-9\/\+_\-]{8,}/gi,reason:"พบการกำหนดค่ารหัสลับ/รหัสผ่านในข้อความ",mask:s=>s.replace(/([:=]\s*['"]?).+/,"$1••••••")},
+  {type:"thai_national_id",cat:"pii",label:"Confidential",weight:70,hard:true,re:/\b\d(?:[\s-]?\d){12}\b/g,validator:validThaiId,reason:"พบเลขบัตรประชาชนไทย 13 หลัก (ผ่าน checksum)",mask:s=>maskMid(s,1,1)},
+  {type:"credit_card",cat:"financial",label:"Confidential",weight:75,hard:true,re:/\b(?:\d[ -]?){13,19}\b/g,validator:validLuhn,reason:"พบหมายเลขบัตรเครดิต (ผ่าน Luhn check)",mask:s=>maskMid(s,4,4)},
+  {type:"thai_passport",cat:"pii",label:"Confidential",weight:60,hard:true,re:/\b[A-Z]{1,2}\d{7}\b/g,reason:"พบเลขหนังสือเดินทาง",mask:s=>maskMid(s,2,1)},
+  {type:"iban",cat:"financial",label:"Confidential",weight:55,re:/\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b/g,reason:"พบเลขบัญชี IBAN",mask:s=>maskMid(s,4,2)},
+  {type:"thai_phone",cat:"pii",label:"Internal",weight:30,re:/\b0[689]\d(?:[\s-]?\d){7}\b/g,reason:"พบเบอร์โทรศัพท์มือถือไทย",mask:s=>maskMid(s,3,2)},
+  {type:"email",cat:"pii",label:"Internal",weight:25,re:/\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b/g,reason:"พบอีเมล",mask:maskEmail},
+  {type:"thai_bank_account",cat:"financial",label:"Confidential",weight:55,re:/\b\d{3}[- ]?\d[- ]?\d{5}[- ]?\d\b/g,reason:"พบรูปแบบเลขบัญชีธนาคาร",mask:s=>maskMid(s,3,1)},
+];
+const SIGNALS=[
+  {name:"financial_internal",cat:"financial",label:"Confidential",weight:35,re:/(งบการเงิน|งบดุล|ยังไม่ประกาศ|ผลประกอบการ|รายได้สุทธิ|กำไรสุทธิ|unreleased|earnings|balance sheet|revenue|EBITDA)/i,reason:"พบคำ/บริบทบ่งชี้ข้อมูลการเงินภายใน"},
+  {name:"mna",cat:"business",label:"Restricted",weight:45,re:/(ควบรวมกิจการ|เข้าซื้อกิจการ|ดีลลับ|M&A|merger|acquisition|due diligence|term sheet)/i,reason:"พบคำ/บริบทบ่งชี้ดีลควบรวมกิจการ (M&A)"},
+  {name:"legal_nda",cat:"legal",label:"Confidential",weight:35,re:/(สัญญาลับ|ข้อตกลงรักษาความลับ|NDA|non-disclosure|confidential agreement|privileged)/i,reason:"พบคำ/บริบทบ่งชี้สัญญา/ข้อตกลงรักษาความลับ"},
+  {name:"strategy",cat:"business",label:"Confidential",weight:30,re:/(กลยุทธ์ลับ|แผนธุรกิจลับ|ความลับทางการค้า|trade secret|business strategy|go-to-market)/i,reason:"พบคำ/บริบทบ่งชี้กลยุทธ์/ความลับทางธุรกิจ"},
+  {name:"salary_hr",cat:"pii",label:"Confidential",weight:35,re:/(เงินเดือน|ฐานเงินเดือน|payroll|salary|ค่าจ้างพนักงาน)/i,reason:"พบคำ/บริบทบ่งชี้ข้อมูลเงินเดือน/HR"},
+  {name:"classified_marker",cat:"business",label:"Restricted",weight:40,re:/(ลับที่สุด|ลับมาก|ห้ามเผยแพร่|confidential|restricted|internal only|ห้ามออกนอกองค์กร|top secret)/i,reason:"พบเครื่องหมายชั้นความลับ (Confidential/Restricted)"},
+  {name:"customer_data",cat:"pii",label:"Confidential",weight:30,re:/(ข้อมูลลูกค้า|รายชื่อลูกค้า|ฐานข้อมูลลูกค้า|customer (?:list|database|records))/i,reason:"พบคำ/บริบทบ่งชี้ข้อมูลลูกค้า"},
+];
+
+/* ---- fingerprint (char n-gram containment) ---- */
+function fnv(s){let h=2166136261>>>0; for(let i=0;i<s.length;i++){h^=s.charCodeAt(i); h=Math.imul(h,16777619)>>>0;} return h>>>0;}
+function shingles(t,k=12){t=t.toLowerCase().replace(/\s+/g," ").trim(); const set=new Set(); if(t.length<k){ if(t)set.add(fnv(t)); return set;} for(let i=0;i<=t.length-k;i++) set.add(fnv(t.slice(i,i+k))); return set;}
+const FP_DOCS=[
+  {id:1,name:"เทมเพลตสัญญา NDA องค์กร",label:"Confidential",text:"สัญญารักษาความลับ Non-Disclosure Agreement ฉบับนี้จัดทำขึ้นระหว่างบริษัทและคู่สัญญา โดยคู่สัญญาตกลงจะเก็บรักษาข้อมูลอันเป็นความลับทั้งหมด รวมถึงข้อมูลทางการค้า กลยุทธ์ รายชื่อลูกค้า ราคาต้นทุน และเทคโนโลยี ไว้เป็นความลับ ห้ามเปิดเผยต่อบุคคลภายนอกโดยเด็ดขาด"},
+  {id:2,name:"งบการเงินภายใน ไตรมาส 2/2569 (ร่าง ยังไม่ประกาศ)",label:"Restricted",text:"งบการเงินภายในไตรมาส 2 ปี 2569 (ร่าง ยังไม่ประกาศต่อสาธารณะ) รายได้รวม 1,248 ล้านบาท เพิ่มขึ้นร้อยละ 12 กำไรสุทธิ 214 ล้านบาท อัตรากำไรขั้นต้นร้อยละ 38 งบดุลแสดงสินทรัพย์รวม 5,600 ล้านบาท หนี้สินรวม 2,100 ล้านบาท ห้ามเผยแพร่ก่อนการประกาศผลประกอบการอย่างเป็นทางการ"},
+];
+FP_DOCS.forEach(d=>d.h=shingles(d.text));
+function fpMatch(text){const q=shingles(text); if(!q.size)return[]; const out=[]; for(const d of FP_DOCS){let inter=0; for(const x of q) if(d.h.has(x)) inter++; if(!inter)continue; const sim=inter/Math.max(1,Math.min(q.size,d.h.size)); if(sim>=0.30) out.push({name:d.name,label:d.label,sim:Math.round(sim*100)/100});} return out.sort((a,b)=>b.sim-a.sim);}
+
+function combine(ws,decay=0.5){if(!ws.length)return 0; ws=[...ws].sort((a,b)=>b-a); let t=0; ws.forEach((w,i)=>t+=w*Math.pow(decay,i)); return Math.min(100,Math.round(t));}
+const maxLabel=ls=>ls.length?ls.reduce((a,b)=>LORDER[a]>=LORDER[b]?a:b):"Public";
+
+function classify(text){
+  text=text||""; const dets=[]; const occ=[];
+  for(const p of PATTERNS){ p.re.lastIndex=0; let m;
+    while((m=p.re.exec(text))){ const raw=m[0]; if(!raw){p.re.lastIndex++;continue;}
+      if(p.validator&&!p.validator(raw)) continue;
+      const s=m.index,e=m.index+raw.length;
+      if(occ.some(([a,b])=>!(e<=a||s>=b))) continue; occ.push([s,e]);
+      dets.push({type:p.type,cat:p.cat,label:p.label,val:(p.mask?p.mask(raw):maskMid(raw)),span:[s,e],weight:p.weight,engine:"regex",hard:!!p.hard,reason:p.reason});
+    }
+  }
+  for(const g of SIGNALS){const m=g.re.exec(text); g.re.lastIndex=0; if(m) dets.push({type:"signal:"+g.name,cat:g.cat,label:g.label,val:m[0].slice(0,40),span:[m.index,m.index+m[0].length],weight:g.weight,engine:"regex",hard:false,reason:g.reason});}
+  for(const h of fpMatch(text)) dets.push({type:"fingerprint:"+h.name,cat:"business",label:h.label,val:h.name+" (คล้าย "+Math.round(h.sim*100)+"%)",span:[0,0],weight:Math.round(h.sim*90),engine:"fingerprint",hard:true,reason:"เนื้อหาตรงกับเอกสารลับ: "+h.name});
+
+  const all=dets.map(d=>d.weight);
+  let risk=combine(all); let label=maxLabel(dets.map(d=>d.label));
+  if(risk>=76) label=maxLabel([label,"Confidential"]);
+  if(!dets.length){label="Public"; risk=0;}
+  const cats=[...new Set(dets.map(d=>d.cat))];
+  const reasons=[...new Set(dets.map(d=>d.reason))].slice(0,8);
+  return {label,risk,categories:cats,detections:dets,reasons:reasons.length?reasons:["ไม่พบข้อมูลลับ"],ai_used:false};
+}
+
+/* ---- redaction ---- */
+const PH={pii:"ข้อมูลส่วนบุคคล",financial:"ข้อมูลการเงิน",secret:"ความลับ",legal:"ข้อมูลสัญญา",code:"โค้ดลับ",business:"ข้อมูลธุรกิจ"};
+function redact(text,cls,asHtml){
+  const spans=cls.detections.filter(d=>d.span[1]>d.span[0]).map(d=>[d.span[0],d.span[1],"[ปิดบัง:"+(PH[d.cat]||"ข้อมูลลับ")+"]"]).sort((a,b)=>b[0]-a[0]);
+  let out=text;
+  for(const [s,e,ph] of spans) out=out.slice(0,s)+(asHtml?(""+ph+""):ph)+out.slice(e);
+  if(asHtml) out=esc(out).replace(//g,"<mark>").replace(//g,"</mark>");
+  return out;
+}
+
+/* ---- policy engine (6 defaults) ---- */
+const POLICIES=[
+  {id:1,pri:10,name:"PII ทุกกรณี → ปิดบังอัตโนมัติ",cat:["pii"],action:"redact",coaching:"พบข้อมูลส่วนบุคคล (PII) ระบบปิดบังให้อัตโนมัติตาม PDPA"},
+  {id:2,pri:20,name:"Restricted → เว็บ AI สาธารณะ = บล็อก",minLabel:"Restricted",action:"block",coaching:"ข้อมูลระดับ 'ลับที่สุด' ห้ามออกนอกองค์กร — โปรดใช้ AI ภายในองค์กรแทน"},
+  {id:3,pri:25,name:"ความลับทางเทคนิค (Secrets/Keys) → บล็อก",cat:["secret"],action:"block",coaching:"พบคีย์/รหัสลับของระบบ ควรเพิกถอน (revoke) คีย์ที่หลุด และใช้ตัวแปรแทนค่าเมื่อ debug กับ AI"},
+  {id:4,pri:40,name:"Confidential + ฝ่ายการตลาด → เตือน + ขออนุมัติ",minLabel:"Confidential",dept:["การตลาด"],action:"warn",approval:true,coaching:"ข้อมูลนี้จัดเป็น 'ลับ' หากจำเป็นต้องใช้ โปรดขออนุมัติจากหัวหน้าก่อน"},
+  {id:5,pri:60,name:"Confidential (ทั่วไป) → เตือน",minLabel:"Confidential",action:"warn",coaching:"เนื้อหานี้อาจเป็นข้อมูลลับขององค์กร โปรดพิจารณาก่อนส่งไปยัง AI สาธารณะ"},
+  {id:6,pri:90,name:"Internal → บันทึกเฝ้าดู (Monitor)",minLabel:"Internal",action:"monitor",coaching:""},
+];
+function evaluate(cls,channel,dept){
+  const cats=new Set([...cls.categories,...cls.detections.map(d=>d.cat)]);
+  for(const p of POLICIES){
+    if(p.minLabel && LORDER[cls.label]<LORDER[p.minLabel]) continue;
+    if(p.cat && !p.cat.some(c=>cats.has(c))) continue;
+    if(p.dept && !p.dept.includes(dept)) continue;
+    return {action:p.action,policy:p.name,coaching:p.coaching,approval:!!p.approval};
+  }
+  if(cls.risk<=15&&cls.label==="Public") return {action:"allow",policy:"default",coaching:"",approval:false};
+  return {action:"warn",policy:"default",coaching:"เนื้อหานี้อาจมีข้อมูลลับ โปรดตรวจสอบก่อนส่ง",approval:false};
+}
+function inspect(text,channel,dept){
+  const cls=classify(text); const dec=evaluate(cls,channel,dept);
+  let action=dec.action, redacted=null;
+  if(action==="redact"){ redacted=redact(text,cls,false); if(redacted===text&&cls.risk>=41){action="block"; redacted=null;} }
+  return {decision:action,classification:cls,redacted_text:redacted,policy:dec.policy,coaching:dec.coaching,approval:dec.approval};
+}
+
+/* ============================================================
+   2) DEMO DATA (events for the console)
+   ============================================================ */
+function mulberry(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const RNG=mulberry(2569);
+const pick=a=>a[Math.floor(RNG()*a.length)];
+const USERS=[["somchai.k","การเงิน"],["naree.p","ขาย"],["dev.arm","วิศวกรรม"],["hr.mint","HR"],["law.ploy","กฎหมาย"],["mkt.tan","การตลาด"],["fin.oil","การเงิน"],["dev.beam","วิศวกรรม"],["sale.nan","ขาย"],["mkt.fah","การตลาด"]];
+const CHANS=["chatgpt","gemini","claude","copilot","deepseek"];
+const CHAN_TH={chatgpt:"ChatGPT",gemini:"Gemini",claude:"Claude",copilot:"Copilot",deepseek:"DeepSeek"};
+const SCEN=[
+  ["financial","Restricted","block","งบการเงินยังไม่ประกาศ",88],["pii","Confidential","redact","เลขบัตรประชาชนลูกค้า",72],
+  ["secret","Restricted","block","API Key ในซอร์สโค้ด",90],["business","Internal","warn","เอกสารภายใน (Internal only)",40],
+  ["legal","Confidential","warn","ตรงกับเทมเพลตสัญญา NDA",66],["pii","Confidential","redact","หมายเลขบัตรเครดิต",75],
+  ["business","Restricted","block","ดีลควบรวมกิจการ (M&A)",82],["pii","Internal","monitor","อีเมลติดต่อ",25],
+  ["financial","Confidential","warn","เลขบัญชีธนาคาร",55],["secret","Confidential","warn","รหัสผ่านในข้อความ",55],
+];
+function genEvents(){
+  const evs=[]; const now=Date.now();
+  const feat=[["somchai.k","การเงิน","chatgpt","financial","Restricted","block","พบตัวเลขงบดุล + คำว่า 'ยังไม่ประกาศ'",88,24],
+    ["naree.p","ขาย","gemini","pii","Confidential","redact","พบเลขบัตรประชาชนลูกค้า 13 หลัก",72,82],
+    ["dev.arm","วิศวกรรม","claude","secret","Restricted","block","พบ API Key ในซอร์สโค้ด",90,128],
+    ["hr.mint","HR","copilot","business","Internal","warn","พบเอกสารภายใน (Internal only)",40,160]];
+  feat.forEach(f=>evs.push(mkEv(now-f[8]*60000,f[0],f[1],f[2],f[3],f[4],f[5],f[6],f[7])));
+  for(let d=0;d<14;d++){ const day=now-d*86400000; const n=6+Math.floor(RNG()*9);
+    for(let i=0;i<n;i++){ const[u,dept]=pick(USERS); const ch=pick(CHANS); const s=pick(SCEN);
+      const ts=day-Math.floor(RNG()*86400000*0.6); evs.push(mkEv(ts,u,dept,ch,s[0],s[1],s[2],s[3],s[4]+Math.floor(RNG()*8-4))); } }
+  return evs.sort((a,b)=>b.ts-a.ts);
+}
+function mkEv(ts,u,dept,ch,cat,label,dec,reason,risk){return{ts,user:u,department:dept,device:u.split(".")[0].toUpperCase()+"-PC",channel:ch,category:cat,label,decision:dec,reason,risk:Math.max(0,Math.min(100,risk))};}
+const EVENTS=genEvents();
+function computeStats(){
+  const det=EVENTS.filter(e=>e.risk>0||["warn","redact","block","monitor"].includes(e.decision));
+  const by=(k)=>det.reduce((a,e)=>{a[e[k]]=(a[e[k]]||0)+1;return a;},{});
+  const dept=by("department"); const top=Object.entries(dept).sort((a,b)=>b[1]-a[1])[0];
+  const devices=new Set(EVENTS.map(e=>e.device)).size;
+  // trend 14d
+  const days={}; const now=new Date();
+  for(let i=13;i>=0;i--){const d=new Date(now-i*86400000); const key=d.toISOString().slice(0,10); days[key]={date:key,det:0,blk:0};}
+  det.forEach(e=>{const key=new Date(e.ts).toISOString().slice(0,10); if(days[key]){days[key].det++; if(e.decision==="block")days[key].blk++;}});
+  return {detections:det.length,blocks:det.filter(e=>e.decision==="block").length,redactions:det.filter(e=>e.decision==="redact").length,
+    warns:det.filter(e=>e.decision==="warn").length,top:top?top[0]:"-",devices,
+    byChannel:by("channel"),byLabel:by("label"),byCategory:by("category"),byDept:dept,trend:Object.values(days)};
+}
+
+/* ============================================================
+   3) UI helpers
+   ============================================================ */
+const $=s=>document.querySelector(s);
+const el=(t,c,h)=>{const n=document.createElement(t); if(c)n.className=c; if(h!=null)n.innerHTML=h; return n;};
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+const nf=n=>Number(n).toLocaleString("th-TH");
+const riskColor=r=>r>=76?"var(--restricted)":r>=41?"var(--confidential)":r>=16?"var(--internal)":"var(--public)";
+const DEC_TH={allow:"ปล่อยผ่าน",monitor:"บันทึกเฝ้าดู",warn:"เตือน",redact:"ปิดบัง",block:"บล็อก"};
+function timeHM(ts){const d=new Date(ts); return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
+function toast(msg){const t=el("div","toast",`<b>🛡️ SENTINELAI</b><div>${esc(msg)}</div>`); $("#toasts").appendChild(t); setTimeout(()=>{t.style.opacity="0";t.style.transition="opacity .3s";},2600); setTimeout(()=>t.remove(),3000);}
+
+/* ---- motion helpers (scroll-reveal + count-up) ---- */
+let _revObs=null;
+function scanReveal(root){
+  const scope=root||document;
+  if(!("IntersectionObserver" in window)){ scope.querySelectorAll(".reveal").forEach(e=>e.classList.add("in")); return; }
+  if(!_revObs){ _revObs=new IntersectionObserver(function(ents){ ents.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add("in"); _revObs.unobserve(en.target); } }); },{threshold:.06, rootMargin:"0px 0px -32px 0px"}); }
+  scope.querySelectorAll(".reveal:not(.in)").forEach(function(e,i){ e.style.transitionDelay=(Math.min(i,8)*55)+"ms"; _revObs.observe(e); });
+}
+function animateCount(root){
+  const scope=root||document, dur=720;
+  const reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  scope.querySelectorAll(".k-num.count[data-val]").forEach(function(node){
+    const target=parseFloat(node.getAttribute("data-val"))||0;
+    if(reduce){ node.textContent=nf(target); return; }
+    const t0=performance.now();
+    const tick=function(now){ const p=Math.min(1,(now-t0)/dur); const e=1-Math.pow(1-p,3);
+      node.textContent=nf(Math.round(target*e)); if(p<1) requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  });
+}
+
+/* charts */
+function trendChart(trend){
+  const W=560,H=180,pad=28; const max=Math.max(4,...trend.map(t=>t.det));
+  const x=i=>pad+i*(W-pad*2)/(trend.length-1); const y=v=>H-pad-(v/max)*(H-pad*2);
+  const line=k=>trend.map((t,i)=>`${i?"L":"M"}${x(i).toFixed(1)},${y(t[k]).toFixed(1)}`).join(" ");
+  const area=line("det")+` L${x(trend.length-1)},${H-pad} L${x(0)},${H-pad} Z`;
+  let grid=""; for(let g=0;g<=2;g++){const yy=pad+g*(H-pad*2)/2; grid+=`<line x1="${pad}" y1="${yy}" x2="${W-pad}" y2="${yy}" stroke="var(--line)" stroke-width="1"/>`;}
+  const dots=trend.map((t,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(t.det).toFixed(1)}" r="2.6" fill="var(--accent)"><title>${t.date}: ตรวจพบ ${t.det} · บล็อก ${t.blk}</title></circle>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="แนวโน้ม 14 วัน">
+    <defs><linearGradient id="ga" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".35"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+    ${grid}<path d="${area}" fill="url(#ga)"/><path d="${line("det")}" fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+    <path d="${line("blk")}" fill="none" stroke="var(--restricted)" stroke-width="2" stroke-dasharray="5 4"/>${dots}</svg>`;
+}
+function hbars(obj,labelMap){
+  const ent=Object.entries(obj).sort((a,b)=>b[1]-a[1]); const max=Math.max(1,...ent.map(e=>e[1]));
+  return `<div style="display:flex;flex-direction:column;gap:9px">`+ent.map(([k,v])=>`
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:92px;font-size:12.5px;color:var(--ink-dim);text-align:right;flex:0 0 auto">${esc(labelMap?labelMap(k):k)}</div>
+      <div style="flex:1;height:9px;background:var(--line);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:${(v/max*100).toFixed(0)}%;background:var(--accent);border-radius:5px"></i></div>
+      <div class="tnum mono" style="width:34px;font-size:12.5px">${v}</div></div>`).join("")+`</div>`;
+}
+function donut(byLabel){
+  const order=["Public","Internal","Confidential","Restricted"]; const col={Public:"var(--public)",Internal:"var(--internal)",Confidential:"var(--confidential)",Restricted:"var(--restricted)"};
+  const data=order.map(k=>[k,byLabel[k]||0]).filter(e=>e[1]>0); const tot=data.reduce((a,e)=>a+e[1],0)||1;
+  let a=-Math.PI/2, segs=""; const R=52,r=32,cx=70,cy=70;
+  data.forEach(([k,v])=>{const ang=v/tot*Math.PI*2, a2=a+ang; const lg=ang>Math.PI?1:0;
+    const p=(rad,an)=>`${(cx+rad*Math.cos(an)).toFixed(1)},${(cy+rad*Math.sin(an)).toFixed(1)}`;
+    segs+=`<path d="M${p(R,a)} A${R},${R} 0 ${lg} 1 ${p(R,a2)} L${p(r,a2)} A${r},${r} 0 ${lg} 0 ${p(r,a)} Z" fill="${col[k]}"><title>${k}: ${v}</title></path>`; a=a2;});
+  const leg=data.map(([k,v])=>`<div style="display:flex;align-items:center;gap:8px;font-size:12.5px"><span style="width:10px;height:10px;border-radius:3px;background:${col[k]}"></span>${k} <b class="tnum" style="margin-left:auto">${v}</b></div>`).join("");
+  return `<div style="display:flex;align-items:center;gap:18px"><svg viewBox="0 0 140 140" width="140" height="140">${segs}<text x="70" y="66" text-anchor="middle" fill="var(--ink)" font-size="22" font-weight="800">${tot}</text><text x="70" y="82" text-anchor="middle" fill="var(--ink-faint)" font-size="9">เหตุการณ์</text></svg><div style="flex:1;display:flex;flex-direction:column;gap:7px">${leg}</div></div>`;
+}
+function gauge(risk){
+  const R=52,cx=60,cy=60,circ=2*Math.PI*R; const frac=risk/100; const col=riskColor(risk);
+  return `<svg viewBox="0 0 120 120" class="gauge-svg"><circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--line)" stroke-width="9"/>
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${col}" stroke-width="9" stroke-linecap="round"
+      stroke-dasharray="${(circ*frac).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 ${cx} ${cy})"/></svg>`;
+}
+
+/* interception modal — the product moment */
+function showModal(o){
+  const theme={block:["⛔","var(--block)","ตรวจพบข้อมูลลับ — ถูกบล็อก"],warn:["⚠️","var(--warn)","ตรวจพบข้อมูลที่อาจเป็นความลับ"],redact:["🛡️","var(--redact)","ปิดบังข้อมูลลับก่อนส่ง"],monitor:["👁️","var(--monitor)","บันทึกเหตุการณ์"],allow:["✅","var(--allow)","ปลอดภัย — ส่งได้"]}[o.decision]||["⚠️","var(--warn)","แจ้งเตือน"];
+  const root=$("#modal-root"); root.innerHTML="";
+  const ov=el("div","overlay");
+  const reasons=(o.reasons||[]).slice(0,4).map(r=>`<li>${esc(r)}</li>`).join("");
+  let btns="";
+  if(o.decision==="block") btns=(o.approval?`<button class="btn" data-a="req">ขออนุมัติจากหัวหน้า</button>`:"")+`<button class="btn primary" data-a="ok">รับทราบ</button>`;
+  else if(o.decision==="redact") btns=`<button class="btn primary" data-a="ok">ส่งฉบับที่ปิดบังแล้ว</button><button class="btn" data-a="x">ยกเลิก</button>`;
+  else if(o.decision==="warn") btns=`<button class="btn" style="border-color:var(--warn);color:var(--warn)" data-a="ok">ยืนยัน ส่งต่อ</button><button class="btn" data-a="x">ยกเลิก</button>`;
+  else btns=`<button class="btn primary" data-a="ok">ตกลง</button>`;
+  ov.innerHTML=`<div class="modal"><div class="m-top" style="background:${theme[1]}"></div><div class="m-body">
+    <div class="m-head"><div class="m-ic">${theme[0]}</div><div><div class="m-brand">🛡️ SENTINELAI</div><div class="m-title">${theme[2]}</div></div></div>
+    <div class="m-msg">เนื้อหาที่คุณกำลังจะส่งไปยัง <b>${esc(o.channelName)}</b> ถูกจัดเป็น <b style="color:var(--${o.label==='Restricted'?'restricted':o.label==='Confidential'?'confidential':o.label==='Internal'?'internal':'public'})">${esc(o.label)}</b></div>
+    <div class="m-badges"><span class="badge lbl-${o.label}">ระดับ ${esc(o.label)}</span><span class="chip">ความเสี่ยง ${o.risk}/100</span></div>
+    ${reasons?`<div class="reasons"><b>เหตุผล:</b><ul>${reasons}</ul></div>`:""}
+    ${o.coaching?`<div class="callout" style="margin-top:12px">💡 ${esc(o.coaching)}</div>`:""}
+    ${o.decision==="redact"&&o.redactedHtml?`<div class="redacted">${o.redactedHtml}</div>`:""}
+    </div><div class="m-actions">${btns}</div>
+    <div class="m-foot">🔒 เหตุการณ์นี้ถูกบันทึกเพื่อการตรวจสอบตามนโยบายองค์กร (PDPA)</div></div>`;
+  ov.addEventListener("click",e=>{const b=e.target.closest("[data-a]"); if(b||e.target===ov){root.innerHTML=""; const a=b&&b.dataset.a; if(a==="req")toast("ส่งคำขออนุมัติถึงหัวหน้าแล้ว (เดโม)"); else if(a==="ok"&&o.decision==="redact")toast("ส่งฉบับที่ปิดบังแล้ว 🛡️");}});
+  root.appendChild(ov);
+}
+
+/* ============================================================
+   4) VIEWS
+   ============================================================ */
+const ROUTES={overview:renderOverview,simulator:renderSimulator,events:renderEvents,policies:renderPolicies,fingerprints:renderFingerprints,devices:renderDevices,setup:renderSetup,superadmin:renderSuperAdmin};
+
+function renderOverview(){
+  const s=computeStats();
+  const kpi=(cls,ic,num,lbl,cnt)=>`<div class="panel kpi ${cls} reveal"><div class="k-top"><span class="k-ic">${ic}</span></div><div class="k-num tnum${cnt!=null?" count":""}"${cnt!=null?` data-val="${cnt}"`:""}>${cnt!=null?"0":num}</div><div class="k-lbl">${lbl}</div></div>`;
+  const recent=EVENTS.slice(0,8).map(e=>`<tr><td class="tnum">${timeHM(e.ts)}</td><td class="u">${esc(e.user)}</td><td>${CHAN_TH[e.channel]}</td><td>${esc(e.reason)}</td><td><span class="badge dec-${e.decision}">${DEC_TH[e.decision]}</span></td></tr>`).join("");
+  return `
+  <div class="page-head reveal" style="margin:22px 0 18px"><div class="eyebrow">Security Operations</div><h1 class="section-title">ภาพรวมการป้องกันข้อมูลลับ</h1>
+    <div class="section-desc">ทุกความพยายามส่งข้อมูลลับไปยังเครื่องมือ AI สาธารณะ ถูกตรวจจับ ประเมินความเสี่ยง และบันทึกไว้ — ข้อมูลตัวอย่าง 14 วัน</div></div>
+  <div class="kpis">
+    ${kpi("","🔍",null,"เหตุการณ์ตรวจพบ (14 วัน)",s.detections)}
+    ${kpi("danger","⛔",null,"บล็อกการรั่วไหล",s.blocks)}
+    ${kpi("accent","🏢",esc(s.top),"แผนกเสี่ยงสูงสุด")}
+    ${kpi("accent","💻",null,"อุปกรณ์ที่มี Agent",s.devices)}
+  </div>
+  <div class="cols reveal" style="margin-top:16px">
+    <div class="panel"><h3>📈 แนวโน้มการตรวจจับ 14 วัน</h3>
+      <div class="legend"><span><i style="background:var(--accent)"></i>ตรวจพบ</span><span><i style="background:var(--restricted)"></i>บล็อก</span></div>
+      ${trendChart(s.trend)}</div>
+    <div class="panel"><h3>🗂️ ตามระดับชั้นความลับ</h3><div style="margin-top:8px">${donut(s.byLabel)}</div></div>
+  </div>
+  <div class="cols reveal" style="margin-top:16px">
+    <div class="panel"><h3>🤖 ปลายทาง AI ที่พยายามส่งไป</h3><div style="margin-top:12px">${hbars(s.byChannel,k=>CHAN_TH[k]||k)}</div></div>
+    <div class="panel"><h3>📊 ประเภทข้อมูลที่พยายามหลุด</h3><div style="margin-top:12px">${hbars(s.byCategory,k=>CAT_TH[k]||k)}</div></div>
+  </div>
+  <div class="panel reveal" style="margin-top:16px"><h3>🕐 เหตุการณ์ล่าสุด</h3>
+    <div class="tbl-wrap" style="margin-top:8px"><table class="tbl"><thead><tr><th>เวลา</th><th>พนักงาน</th><th>ปลายทาง AI</th><th>ประเภทข้อมูล</th><th>การกระทำ</th></tr></thead><tbody>${recent}</tbody></table></div></div>`;
+}
+
+let simState={channel:"chatgpt",dept:""};
+function renderSimulator(){
+  setTimeout(bindSim,0);
+  return `
+  <div class="page-head reveal" style="margin:22px 0 18px"><div class="eyebrow">Live Threat Simulator</div><h1 class="section-title">ทดสอบระบบ — ลองวางข้อมูลลับดู</h1>
+    <div class="section-desc">พิมพ์หรือวางข้อความ ระบบจะจัดประเภท ประเมินความเสี่ยง และตัดสินการกระทำ <b>แบบเรียลไทม์ในเบราว์เซอร์</b> (ชั้น Regex + Fingerprint — เหมือนที่ทำงานในเครื่องพนักงานจริง)</div></div>
+  <div class="controls">
+    <select class="select" id="sim-chan">${CHANS.map(c=>`<option value="${c}">${CHAN_TH[c]}</option>`).join("")}</select>
+    <select class="select" id="sim-dept"><option value="">ทุกแผนก</option>${["การเงิน","การตลาด","HR","วิศวกรรม","กฎหมาย","ขาย"].map(d=>`<option>${d}</option>`).join("")}</select>
+    <button class="btn primary sm" id="sim-intercept">▶ จำลองการดักจับ (โชว์ป๊อปอัป)</button>
+  </div>
+  <div class="samples" id="sim-samples"></div>
+  <div class="sim-grid reveal">
+    <div class="panel"><h3>✍️ เนื้อหาที่จะส่งไป AI</h3>
+      <textarea class="sim-input" id="sim-text" placeholder="วางข้อความที่ต้องการทดสอบ เช่น งบการเงิน เลขบัตรประชาชน API key ..."></textarea></div>
+    <div class="panel" id="sim-result"><h3>🛡️ ผลการตรวจสอบ</h3><div id="sim-out" style="color:var(--ink-dim);margin-top:14px">เริ่มพิมพ์เพื่อดูผลแบบเรียลไทม์…</div></div>
+  </div>`;
+}
+const SAMPLES=[
+  ["🧾 งบการเงินลับ","งบการเงินภายในไตรมาส 2/2569 ยังไม่ประกาศ กำไรสุทธิ 214 ล้านบาท งบดุลสินทรัพย์รวม 5,600 ล้านบาท ห้ามเผยแพร่ก่อนประกาศ"],
+  ["🪪 บัตร ปชช. + บัตรเครดิต","ลูกค้า: นายสมชาย เลขบัตรประชาชน 1101700207366 บัตรเครดิต 4111 1111 1111 1111 เบอร์ 0812345678"],
+  ["🔑 API Key ในโค้ด","const OPENAI_API_KEY = 'sk-proj-abcd1234efgh5678ijkl9012mnop3456qrst'; // ช่วย debug หน่อย"],
+  ["📜 สัญญา NDA","สัญญารักษาความลับ Non-Disclosure Agreement คู่สัญญาตกลงจะเก็บรักษาข้อมูลอันเป็นความลับ รวมถึงรายชื่อลูกค้าและกลยุทธ์"],
+  ["🤝 ดีลควบรวม","เราเตรียมเข้าซื้อกิจการคู่แข่งรายใหญ่ มูลค่าดีล 3,200 ล้านบาท เป็นความลับสุดยอด ห้ามบอกใคร"],
+  ["🍲 คำถามทั่วไป","ขอสูตรต้มยำกุ้งแบบน้ำข้นอร่อย ๆ หน่อยครับ"],
+];
+function bindSim(){
+  const ta=$("#sim-text"), samp=$("#sim-samples");
+  samp.innerHTML=SAMPLES.map((s,i)=>`<button data-i="${i}">${esc(s[0])}</button>`).join("");
+  samp.onclick=e=>{const b=e.target.closest("[data-i]"); if(!b)return; ta.value=SAMPLES[b.dataset.i][1]; runSim();};
+  $("#sim-chan").onchange=e=>{simState.channel=e.target.value; runSim();};
+  $("#sim-dept").onchange=e=>{simState.dept=e.target.value; runSim();};
+  let t; ta.oninput=()=>{clearTimeout(t); t=setTimeout(runSim,180);};
+  $("#sim-intercept").onclick=()=>{const text=ta.value.trim(); if(!text){toast("พิมพ์ข้อความก่อนนะครับ");return;} const r=inspect(text,simState.channel,simState.dept);
+    showModal({decision:r.decision,channelName:CHAN_TH[simState.channel],label:r.classification.label,risk:r.classification.risk,reasons:r.classification.reasons,coaching:r.coaching,approval:r.approval,redactedHtml:r.redacted_text?redact(text,r.classification,true):null});};
+}
+function runSim(){
+  const text=$("#sim-text").value; const out=$("#sim-out");
+  if(!text.trim()){out.innerHTML='<div style="color:var(--ink-dim)">เริ่มพิมพ์เพื่อดูผลแบบเรียลไทม์…</div>'; return;}
+  const r=inspect(text,simState.channel,simState.dept); const c=r.classification;
+  const dets=c.detections.length?c.detections.map(d=>`<div class="det"><span class="d-eng eng-${d.engine}">${d.engine}</span><span>${esc(typeTh(d.type))}</span><span class="d-val">${esc(d.val)}</span></div>`).join(""):'<div style="color:var(--ink-faint);font-size:13px">— ไม่พบรูปแบบข้อมูลลับ —</div>';
+  out.innerHTML=`
+    <div class="verdict">
+      <div class="gauge">${gauge(c.risk)}<div class="g-num"><b style="color:${riskColor(c.risk)}">${c.risk}</b><span>Risk</span></div></div>
+      <div class="verdict-meta"><span class="badge lbl-${c.label}">${c.label}</span>
+        <div class="verdict-dec" style="color:var(--${r.decision==='block'?'block':r.decision==='redact'?'redact':r.decision==='warn'?'warn':r.decision==='monitor'?'monitor':'allow'})">${decIcon(r.decision)} ${DEC_TH[r.decision]}</div>
+        <div style="font-size:12px;color:var(--ink-faint);margin-top:2px">นโยบาย: ${esc(r.policy)}</div></div>
+    </div>
+    <div class="det-list">${dets}</div>
+    <div class="reasons"><b>เหตุผล</b><ul>${c.reasons.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+    ${r.coaching?`<div class="callout" style="margin-top:12px">💡 ${esc(r.coaching)}</div>`:""}
+    ${r.redacted_text?`<div class="redacted"><div style="font-size:11px;color:var(--ink-faint);margin-bottom:6px">ฉบับที่ปิดบังแล้ว (ส่งต่อได้):</div>${redact(text,c,true)}</div>`:""}`;
+}
+const decIcon=d=>({allow:"✅",monitor:"👁️",warn:"⚠️",redact:"🛡️",block:"⛔"}[d]||"");
+function typeTh(t){
+  if(t.startsWith("signal:"))return "สัญญาณบริบท: "+t.slice(7);
+  if(t.startsWith("fingerprint:"))return "ตรงกับเอกสารลับ";
+  return {thai_national_id:"เลขบัตรประชาชน",credit_card:"บัตรเครดิต",openai_key:"OpenAI API Key",anthropic_key:"Anthropic Key",aws_access_key:"AWS Key",google_api_key:"Google API Key",github_token:"GitHub Token",slack_token:"Slack Token",private_key:"Private Key",jwt:"JWT Token",generic_secret_assign:"รหัสลับ/รหัสผ่าน",db_connection:"DB Connection",email:"อีเมล",thai_phone:"เบอร์โทรศัพท์",thai_bank_account:"เลขบัญชีธนาคาร",iban:"IBAN",thai_passport:"หนังสือเดินทาง"}[t]||t;
+}
+
+let evFilter={decision:"",channel:"",label:""};
+function renderEvents(){
+  setTimeout(bindEvents,0);
+  const opt=(arr,cur,map)=>arr.map(v=>`<option value="${v}" ${v===cur?"selected":""}>${map?map(v):v}</option>`).join("");
+  return `
+  <div class="page-head reveal" style="margin:22px 0 18px"><div class="eyebrow">Audit Log</div><h1 class="section-title">บันทึกเหตุการณ์ทั้งหมด</h1>
+    <div class="section-desc">หลักฐานครบถ้วนสำหรับ PDPA / ISO 27001 — ใคร / เมื่อไหร่ / ข้อมูลประเภทใด / ปลายทาง / ผลลัพธ์</div></div>
+  <div class="controls">
+    <select class="select" id="f-dec"><option value="">ทุกการกระทำ</option>${opt(["block","redact","warn","monitor"],"",v=>DEC_TH[v])}</select>
+    <select class="select" id="f-chan"><option value="">ทุกช่องทาง</option>${opt(CHANS,"",v=>CHAN_TH[v])}</select>
+    <select class="select" id="f-label"><option value="">ทุกระดับ</option>${opt(LABELS,"")}</select>
+    <span class="chip" id="ev-count"></span>
+  </div>
+  <div class="panel reveal" style="padding:8px"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>เวลา</th><th>พนักงาน</th><th>แผนก</th><th>ปลายทาง</th><th>ประเภท</th><th>ระดับ</th><th>ความเสี่ยง</th><th>การกระทำ</th></tr></thead><tbody id="ev-body"></tbody></table></div></div>`;
+}
+function bindEvents(){["f-dec","f-chan","f-label"].forEach(id=>{const e=$("#"+id); if(e)e.onchange=()=>{evFilter={decision:$("#f-dec").value,channel:$("#f-chan").value,label:$("#f-label").value}; drawEvents();};}); drawEvents();}
+function drawEvents(){
+  const rows=EVENTS.filter(e=>(!evFilter.decision||e.decision===evFilter.decision)&&(!evFilter.channel||e.channel===evFilter.channel)&&(!evFilter.label||e.label===evFilter.label));
+  $("#ev-count").textContent=nf(rows.length)+" เหตุการณ์";
+  $("#ev-body").innerHTML=rows.slice(0,120).map(e=>`<tr>
+    <td class="tnum">${new Date(e.ts).toLocaleDateString("th-TH",{day:"2-digit",month:"2-digit"})} ${timeHM(e.ts)}</td>
+    <td class="u">${esc(e.user)}</td><td>${esc(e.department)}</td><td>${CHAN_TH[e.channel]}</td>
+    <td>${CAT_TH[e.category]||e.category}</td><td><span class="badge lbl-${e.label}">${e.label}</span></td>
+    <td><div class="risk-cell"><div class="risk-bar"><i style="width:${e.risk}%;background:${riskColor(e.risk)}"></i></div><span class="tnum mono" style="font-size:12px">${e.risk}</span></div></td>
+    <td><span class="badge dec-${e.decision}">${DEC_TH[e.decision]}</span></td></tr>`).join("");
+}
+
+function renderPolicies(){
+  const rule=p=>{const parts=[]; if(p.minLabel)parts.push(`ระดับ ≥ <b>${p.minLabel}</b>`); if(p.cat)parts.push(`ประเภท = <b>${p.cat.map(c=>CAT_TH[c]||c).join("/")}</b>`); if(p.dept)parts.push(`แผนก = <b>${p.dept.join("/")}</b>`); return (parts.length?"ถ้า "+parts.join(" และ "):"ทุกกรณีที่เหลือ")+` → <b style="color:var(--${p.action})">${DEC_TH[p.action]}</b>`+(p.approval?" + ขออนุมัติ":"");};
+  return `
+  <div class="page-head reveal" style="margin:22px 0 18px"><div class="eyebrow">Policy Engine · M3</div><h1 class="section-title">นโยบายการควบคุม</h1>
+    <div class="section-desc">กำหนดว่า ใคร / ข้อมูลประเภทใด / ช่องทางใด → ทำอย่างไร (เรียงตามลำดับความสำคัญ เลขน้อยตรวจก่อน)</div></div>
+  <div class="grid" style="gap:12px">${POLICIES.map(p=>`<div class="pol reveal"><div class="p-pri">#${p.pri}</div>
+    <div class="p-body"><div class="p-name">${esc(p.name)}</div><div class="p-rule">${rule(p)}</div>
+    ${p.coaching?`<div style="font-size:12px;color:var(--accent);margin-top:6px">💡 ${esc(p.coaching)}</div>`:""}</div>
+    <span class="badge dec-${p.action}">${DEC_TH[p.action]}</span></div>`).join("")}</div>`;
+}
+
+function renderFingerprints(){
+  return `
+  <div class="page-head reveal" style="margin:22px 0 18px"><div class="eyebrow">Data Fingerprinting · M1</div><h1 class="section-title">เอกสารลับที่ลงทะเบียน</h1>
+    <div class="section-desc">จับได้แม้พนักงานคัดลอกเพียง <b>บางส่วน</b> ของเอกสาร — เก็บเฉพาะ "ลายนิ้วมือ" (hash) ไม่เก็บเนื้อหาดิบ (PDPA) · ลองคัดลอกบางประโยคจากด้านล่างไปทดสอบในแท็บ "ทดสอบระบบ"</div></div>
+  <div class="grid" style="gap:12px">${FP_DOCS.map(d=>`<div class="fp reveal"><div class="f-ic">📄</div>
+    <div style="flex:1"><div style="font-weight:700">${esc(d.name)}</div>
+      <div style="font-size:12px;color:var(--ink-faint);margin-top:3px">${d.h.size} ลายนิ้วมือ (shingles) · ตัวอย่างเนื้อหา: "${esc(d.text.slice(0,64))}…"</div></div>
+    <span class="badge lbl-${d.label}">${d.label}</span></div>`).join("")}</div>`;
+}
+
+function renderAbout(){
+  const models=[["Reasoning (Seed 2.0 Pro)","seed-2-0-pro-260328","สมอง Policy Engine — ประเมินบริบทเชิงความหมาย (รุ่นล่าสุด)"],
+    ["Vision / Document","seed-2-0-pro-260328","อ่านภาพหน้าจอ/สลิป/บัตร/PDF (multimodal)"],
+    ["Fast","seed-2-0-lite-260428","คัดกรองเร็ว (Seed 2.0 Lite)"],["Embedding","skylark-embedding-vision-251215","Fingerprint เชิงความหมาย + ค้นความคล้าย (ล่าสุด)"]];
+  return `
+  <div class="page-head reveal" style="margin:22px 0 18px"><div class="eyebrow">Engine &amp; Models</div><h1 class="section-title">โมเดล &amp; การเชื่อมต่อ BytePlus</h1>
+    <div class="section-desc">เว็บเดโมนี้รันชั้น <b>Regex + Fingerprint</b> ในเบราว์เซอร์ทั้งหมด (ทำงาน 100% โดยไม่ต้องมีคีย์) — ส่วนชั้น <b>AI Semantic</b> ต่อกับ BytePlus ModelArk ในระบบเต็ม</div></div>
+  <div class="cols">
+    <div class="panel"><h3>🧠 3 ชั้นการตรวจจับ</h3>
+      <div class="steps" style="margin-top:14px">
+        <div class="step"><div><b>Pattern / Regex</b><div style="color:var(--ink-dim);font-size:13px">บัตร ปชช.(checksum), บัตรเครดิต(Luhn), API key, บัญชี — ในเครื่อง ✅ ทำงานในเว็บนี้</div></div></div>
+        <div class="step"><div><b>Fingerprinting</b><div style="color:var(--ink-dim);font-size:13px">จับเอกสารลับที่ถูกคัดลอกบางส่วน — ในเครื่อง ✅ ทำงานในเว็บนี้</div></div></div>
+        <div class="step"><div><b>AI Semantic (BytePlus)</b><div style="color:var(--ink-dim);font-size:13px">เข้าใจความหมาย/บริบท/ภาพ หลายภาษา — ต้องต่อ backend + คีย์ 🔒</div></div></div>
+      </div></div>
+    <div class="panel"><h3>🔌 สถานะการเชื่อมต่อ</h3>
+      <div class="callout" style="margin-top:12px">โหมดเว็บเดโม: <b>Regex + Fingerprint</b> (ในเบราว์เซอร์) — ตรวจจับข้อมูลลับที่มีรูปแบบได้ทันที</div>
+      <dl class="kv" style="margin-top:16px">
+        <dt>Base URL</dt><dd>ark.ap-southeast.bytepluses.com</dd>
+        <dt>มาตรฐาน API</dt><dd>OpenAI-compatible</dd>
+        <dt>ชั้น AI</dt><dd>เปิดใน backend เมื่อใส่ ARK_API_KEY</dd>
+      </dl></div>
+  </div>
+  <div class="panel" style="margin-top:16px"><h3>🤖 โมเดล BytePlus ที่ใช้ในแต่ละจุด</h3>
+    <div class="tbl-wrap" style="margin-top:8px"><table class="tbl model-tbl"><thead><tr><th>ความสามารถ</th><th>Model ID</th><th>ใช้ทำอะไร</th></tr></thead>
+    <tbody>${models.map(m=>`<tr><td><b>${m[0]}</b></td><td class="mono" style="color:var(--accent)">${m[1]}</td><td style="color:var(--ink-dim)">${m[2]}</td></tr>`).join("")}</tbody></table></div>
+    <div style="font-size:12px;color:var(--ink-faint);margin-top:10px">* Model ID ปรับได้ตามภูมิภาค/บัญชีของคุณในไฟล์ .env ของ backend</div></div>
+  <div class="panel" style="margin-top:16px"><h3>🚀 อยากได้ระบบเต็ม (Extension + AI)?</h3>
+    <div style="color:var(--ink-dim);font-size:13.5px;margin-top:8px">เว็บนี้คือ Dashboard + เครื่องยนต์ตรวจจับ ส่วนระบบเต็มมี Browser Extension ที่ดักจับ paste/พิมพ์บน ChatGPT/Gemini/Claude/Copilot จริง + AI ของ BytePlus — โค้ดทั้งหมด (backend/extension/dashboard) อยู่ในโปรเจกต์แล้ว รันด้วย <span class="chip">uvicorn app.main:app</span></div></div>`;
+}
+
+/* ============================================================
+   5) AUTH (เดโม — เก็บบัญชีใน localStorage ของเบราว์เซอร์)
+   ============================================================ */
+const AUTH_KEY="sa_accounts", SESS_KEY="sa_session";
+function _accts(){ try{return JSON.parse(localStorage.getItem(AUTH_KEY)||"{}");}catch(e){return {};} }
+function _saveAccts(a){ localStorage.setItem(AUTH_KEY, JSON.stringify(a)); }
+function session(){ try{return JSON.parse(localStorage.getItem(SESS_KEY)||"null");}catch(e){return null;} }
+function _setSession(s){ if(s) localStorage.setItem(SESS_KEY, JSON.stringify(s)); else localStorage.removeItem(SESS_KEY); }
+function _genKey(){ return "sk_org_"+Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,10); }
+
+function doSignup(org,email,pw,name){
+  email=(email||"").toLowerCase().trim();
+  if(!org||!org.trim()) return {err:"กรุณากรอกชื่อองค์กร"};
+  if(!email||!email.includes("@")) return {err:"กรุณากรอกอีเมลให้ถูกต้อง"};
+  if((pw||"").length<6) return {err:"รหัสผ่านต้องยาวอย่างน้อย 6 ตัวอักษร"};
+  const a=_accts();
+  if(a[email]) return {err:"อีเมลนี้ถูกใช้สมัครแล้ว ลองเข้าสู่ระบบแทน"};
+  a[email]={org:org.trim(), email, name:(name||"").trim(), pw, apiKey:_genKey(), created:Date.now()};
+  _saveAccts(a);
+  return {ok:a[email]};
+}
+function doLogin(email,pw){
+  email=(email||"").toLowerCase().trim();
+  const a=_accts();
+  if(!a[email]||a[email].pw!==pw) return {err:"อีเมลหรือรหัสผ่านไม่ถูกต้อง"};
+  return {ok:a[email]};
+}
+function updateHeaderUser(){
+  const s=session()||{};
+  const el=$("#hdr-org"); if(el) el.textContent=s.org||s.email||"";
+}
+function enterApp(acct, toSetup){
+  _setSession({email:acct.email, org:acct.org, name:acct.name, apiKey:acct.apiKey});
+  document.getElementById("auth-screen").style.display="none";
+  document.querySelector(".topbar").style.display="";
+  $("#view").style.display="";
+  updateHeaderUser();
+  go(toSetup ? "setup" : (location.hash.slice(1)||"overview"));
+}
+function showAuth(){
+  document.getElementById("auth-screen").style.display="";
+  document.querySelector(".topbar").style.display="none";
+  $("#view").style.display="none";
+}
+function logout(){ _setSession(null); location.hash=""; showAuth(); }
+
+let _authMode="login";
+function setAuthMode(m){
+  _authMode=m;
+  document.getElementById("tab-login").classList.toggle("on",m==="login");
+  document.getElementById("tab-signup").classList.toggle("on",m==="signup");
+  document.querySelectorAll(".auth-field.su").forEach(e=>e.style.display=m==="signup"?"":"none");
+  document.getElementById("auth-submit").textContent=m==="signup"?"สมัครใช้งาน":"เข้าสู่ระบบ";
+  document.getElementById("auth-err").style.display="none";
+}
+function wireAuth(){
+  document.getElementById("tab-login").onclick=()=>setAuthMode("login");
+  document.getElementById("tab-signup").onclick=()=>setAuthMode("signup");
+  document.getElementById("btn-logout").onclick=logout;
+  document.getElementById("auth-form").addEventListener("submit",(e)=>{
+    e.preventDefault();
+    const email=document.getElementById("f-email").value, pw=document.getElementById("f-pw").value;
+    const res=_authMode==="signup"
+      ? doSignup(document.getElementById("f-org").value, email, pw, document.getElementById("f-name").value)
+      : doLogin(email,pw);
+    if(res.err){ const el=document.getElementById("auth-err"); el.textContent=res.err; el.style.display=""; return; }
+    enterApp(res.ok, _authMode==="signup");
+  });
+}
+
+/* ---- Devices tab (อุปกรณ์ที่ติดตั้ง) ---- */
+const DEVICES=[
+  {name:"FIN-PC-014",user:"somchai.k",dept:"การเงิน",type:"both",os:"Windows 11",online:true,last:"เมื่อสักครู่",events:42},
+  {name:"SALE-PC-07",user:"naree.p",dept:"ขาย",type:"browser",os:"Windows 11",online:true,last:"2 นาทีที่แล้ว",events:18},
+  {name:"DEV-MBP-03",user:"dev.arm",dept:"วิศวกรรม",type:"both",os:"macOS 14",online:true,last:"5 นาทีที่แล้ว",events:31},
+  {name:"HR-PC-02",user:"hr.mint",dept:"HR",type:"endpoint",os:"Windows 10",online:false,last:"1 ชม.ที่แล้ว",events:9},
+  {name:"LAW-PC-05",user:"law.ploy",dept:"กฎหมาย",type:"browser",os:"Windows 11",online:true,last:"12 นาทีที่แล้ว",events:14},
+  {name:"MKT-PC-11",user:"mkt.tan",dept:"การตลาด",type:"both",os:"Windows 11",online:false,last:"เมื่อวานนี้",events:7},
+  {name:"FIN-PC-021",user:"fin.oil",dept:"การเงิน",type:"endpoint",os:"Windows 11",online:true,last:"เมื่อสักครู่",events:23},
+  {name:"DEV-PC-09",user:"dev.beam",dept:"วิศวกรรม",type:"browser",os:"Ubuntu 22",online:true,last:"3 นาทีที่แล้ว",events:26},
+];
+const DEV_TYPE={both:"🌐+💻 ครบ",browser:"🌐 Extension",endpoint:"💻 Agent"};
+function renderDevices(){
+  const total=DEVICES.length, online=DEVICES.filter(d=>d.online).length;
+  const ext=DEVICES.filter(d=>d.type!=="endpoint").length, agent=DEVICES.filter(d=>d.type!=="browser").length;
+  const kpi=(ic,n,l)=>`<div class="panel kpi reveal"><div class="k-top"><span class="k-ic">${ic}</span></div><div class="k-num tnum count" data-val="${n}">0</div><div class="k-lbl">${l}</div></div>`;
+  const rows=DEVICES.map(d=>`<tr>
+    <td><b>${esc(d.name)}</b></td><td class="u">${esc(d.user)}</td><td>${esc(d.dept)}</td>
+    <td>${DEV_TYPE[d.type]}</td><td style="color:var(--ink-dim)">${esc(d.os)}</td>
+    <td>${d.online?'<span style="color:var(--allow)">● ออนไลน์</span>':'<span style="color:var(--ink-faint)">○ ออฟไลน์</span>'}</td>
+    <td style="color:var(--ink-dim)">${esc(d.last)}</td><td class="tnum">${d.events}</td></tr>`).join("");
+  return `
+  <div class="page-head reveal" style="margin:22px 0 18px"><div class="eyebrow">Installed Devices</div><h1 class="section-title">อุปกรณ์ที่ติดตั้ง SentinelAI</h1>
+    <div class="section-desc">ทุกเครื่อง (เบราว์เซอร์/คอม) ที่ติดตั้งและใส่ API key ขององค์กรคุณ จะแสดงที่นี่ พร้อมสถานะและจำนวนเหตุการณ์ที่ป้องกันได้ (ข้อมูลตัวอย่าง)</div></div>
+  <div class="kpis">
+    ${kpi("💻",total,"อุปกรณ์ทั้งหมด")}
+    ${kpi("🟢",online,"ออนไลน์ตอนนี้")}
+    ${kpi("🌐",ext,"มี Browser Extension")}
+    ${kpi("🛡️",agent,"มี Endpoint Agent")}
+  </div>
+  <div class="panel reveal" style="margin-top:16px"><h3>รายการอุปกรณ์</h3>
+    <div class="tbl-wrap" style="margin-top:8px"><table class="tbl"><thead><tr>
+      <th>อุปกรณ์</th><th>ผู้ใช้</th><th>แผนก</th><th>ประเภท</th><th>ระบบ</th><th>สถานะ</th><th>เห็นล่าสุด</th><th>เหตุการณ์</th>
+    </tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="callout" style="margin-top:14px">💡 <b>ประเภท:</b> 🌐 Extension = ป้องกันในเบราว์เซอร์ · 💻 Agent = ป้องกันนอกเบราว์เซอร์ (ก๊อปวาง/ไฟล์ในคอม) · ครบ = ทั้งสอง</div></div>`;
+}
+
+/* ---- Setup & Install (ติดตั้ง & ตั้งค่า) ---- */
+function renderSetup(){
+  const s=session()||{};
+  setTimeout(()=>{ const b=$("#copy-key"); if(b) b.onclick=()=>{ navigator.clipboard&&navigator.clipboard.writeText(s.apiKey||""); toast("คัดลอก API key แล้ว"); };
+    const dlMsg="การดาวน์โหลดจะเริ่มจากเซิร์ฟเวอร์ขององค์กรคุณ (เดโม)";
+    const de=$("#dl-ext"); if(de) de.onclick=()=>toast(dlMsg);
+    const da=$("#dl-agent"); if(da) da.onclick=()=>toast(dlMsg);
+  },0);
+  const cmd=(t)=>`<code style="display:inline-block;background:var(--bg-2);border:1px solid var(--line);padding:4px 9px;border-radius:6px;font-family:var(--mono);font-size:12.5px;color:var(--accent);word-break:break-all">${t}</code>`;
+  return `
+  <div class="page-head reveal" style="margin:22px 0 18px"><div class="eyebrow">Install &amp; Settings</div><h1 class="section-title">ติดตั้ง &amp; ตั้งค่า</h1>
+    <div class="section-desc">ทำ 3 ส่วน: (1) คัดลอก API key · (2) ติดตั้งบนเบราว์เซอร์ · (3) ติดตั้งบนคอม — ทุกเครื่องที่ติดตั้งจะโผล่ในแท็บ "อุปกรณ์"</div></div>
+
+  <div class="panel reveal"><h3>🔑 1. API Key — คืออะไร ใช้ทำอะไร?</h3>
+    <div class="callout" style="margin-top:10px">API Key = <b>"รหัสประจำองค์กรของคุณ"</b> เหมือนกุญแจบ้าน — ทุกเครื่องที่ติดตั้ง (เบราว์เซอร์/คอม) ต้องใส่คีย์นี้ เพื่อบอกว่า <b>"เครื่องนี้เป็นของบริษัทคุณ"</b> → เหตุการณ์ที่ตรวจจับได้จะวิ่งเข้าแดชบอร์ดของคุณ ไม่ปนกับบริษัทอื่น (เก็บเป็นความลับเหมือนรหัสผ่าน)</div>
+    <div class="key-box"><code id="org-key">${esc(s.apiKey||"-")}</code><button class="btn primary sm" id="copy-key">📋 คัดลอก</button></div>
+    <div style="color:var(--ink-dim);font-size:12.5px;margin-top:8px">องค์กร: <b style="color:var(--ink)">${esc(s.org||"-")}</b> · ผู้ดูแล: ${esc(s.email||"-")}</div>
+    <div style="font-size:12.5px;color:var(--ink-dim);margin-top:16px;font-weight:650">⬇ ดาวน์โหลดตัวติดตั้ง (พร้อมฝัง API key ขององค์กรคุณ)</div>
+    <div class="dl-row">
+      <button class="btn primary" id="dl-ext">⬇ ดาวน์โหลด Extension (เบราว์เซอร์)</button>
+      <button class="btn dl-secondary" id="dl-agent">⬇ ดาวน์โหลด Agent (คอม)</button>
+    </div></div>
+
+  <div class="panel reveal" style="margin-top:16px"><h3>🌐 2. ติดตั้งบนเบราว์เซอร์ (Chrome / Edge)</h3>
+    <div style="color:var(--ink-dim);font-size:13px;margin:6px 0">ป้องกันตอนพิมพ์/วางบน ChatGPT, Gemini, Claude, Copilot, DeepSeek — ทำตามภาพทีละขั้น</div>
+    <div class="vsteps">
+      <div class="vstep">
+        <div class="vtxt"><div class="vnum">1</div><h4>เปิดหน้าส่วนขยาย + Developer mode</h4><p>พิมพ์ <b>chrome://extensions</b> ในช่อง URL แล้วเปิดสวิตช์ <b>Developer mode</b> (มุมขวาบน)</p></div>
+        <div class="mk"><div class="mk-bar"><span class="d r"></span><span class="d y"></span><span class="d g"></span><div class="mk-url">chrome://extensions</div></div>
+          <div class="mk-b"><div class="mk-row"><b style="color:#1f2a36">Extensions</b><div class="mk-tog">Developer mode <span class="sw"></span></div></div></div></div>
+      </div>
+      <div class="vstep">
+        <div class="vtxt"><div class="vnum">2</div><h4>กด "Load unpacked" → เลือกโฟลเดอร์</h4><p>กดปุ่ม <b>Load unpacked</b> แล้วเลือกโฟลเดอร์ <b>extension/</b> ของ SentinelAI</p></div>
+        <div class="mk"><div class="mk-bar"><span class="d r"></span><span class="d y"></span><span class="d g"></span><div class="mk-url">chrome://extensions</div></div>
+          <div class="mk-b"><div class="mk-btns"><span class="mk-btn hi">⬆ Load unpacked</span><span class="mk-btn">Pack extension</span><span class="mk-btn">Update</span></div><div class="mk-folder">📁 เลือกโฟลเดอร์ extension/</div></div></div>
+      </div>
+      <div class="vstep">
+        <div class="vtxt"><div class="vnum">3</div><h4>วาง API key ในช่อง "Org Key"</h4><p>คลิกไอคอน 🛡️ → <b>ตั้งค่า</b> → วาง API key ของคุณ + กรอกอีเมล/แผนก</p></div>
+        <div class="mk"><div class="mk-bar dk"><span class="d r"></span><span class="d y"></span><span class="d g"></span><span class="mk-tt">🛡️ SentinelAI — ตั้งค่า</span></div>
+          <div class="mk-b" style="background:#0f172a"><div><div class="mk-lab">Org Key</div><div class="mk-inp hi">${esc((s.apiKey||"sk_org_xxxxxxxx").slice(0,26))}…</div></div><div><div class="mk-lab">อีเมล</div><div class="mk-inp">you@company.co.th</div></div></div></div>
+      </div>
+      <div class="vstep">
+        <div class="vtxt"><div class="vnum">4</div><h4>เสร็จ! ระบบเด้งเตือนทันที</h4><p>ลองวางเลขบัตร/API key ลง ChatGPT → กล่องเตือนเด้งขึ้นมาบล็อกให้ทันที</p></div>
+        <div class="mk"><div class="mk-bar"><span class="d r"></span><span class="d y"></span><span class="d g"></span><div class="mk-url">chatgpt.com</div></div>
+          <div class="mk-chat"><div class="head">ChatGPT</div><div class="field">วางข้อความ...</div>
+            <div class="mk-pop"><div class="card"><div class="top"></div><div class="cin"><div class="t">⛔ ตรวจพบข้อมูลลับ — ถูกบล็อก</div><div class="s">พบเลขบัตรประชาชน · ระดับ Confidential</div><div class="cb"><span style="background:#ef4444;color:#fff">รับทราบ</span><span style="background:#1e293b;color:#cbd5e1">ขออนุมัติ</span></div></div></div></div></div></div>
+      </div>
+    </div></div>
+
+  <div class="panel reveal" style="margin-top:16px"><h3>💻 3. ติดตั้งบนคอมพิวเตอร์ (Endpoint Agent)</h3>
+    <div style="color:var(--ink-dim);font-size:13px;margin:6px 0">ป้องกัน <b>"นอกเบราว์เซอร์"</b> — ก๊อปวางลงแอปเดสก์ท็อป (ChatGPT app, Slack, Word) + สแกนไฟล์ลับในเครื่อง</div>
+    <div class="vsteps">
+      <div class="vstep">
+        <div class="vtxt"><div class="vnum">1</div><h4>เช็คว่าเครื่องมี Python</h4><p>เปิด Command Prompt / Terminal พิมพ์ <b>python --version</b> (ถ้าไม่มี โหลดจาก python.org)</p></div>
+        <div class="mk mk-term"><div class="mk-bar dk"><span class="d r"></span><span class="d y"></span><span class="d g"></span><span class="mk-tt">Command Prompt</span></div>
+          <div class="tb"><span class="pr">C:\\&gt;</span> python --version<br><span class="ok">Python 3.12.9</span></div></div>
+      </div>
+      <div class="vstep">
+        <div class="vtxt"><div class="vnum">2</div><h4>ใส่ API key ขององค์กร</h4><p>ตั้งตัวแปร <b>SENTINEL_ORG_KEY</b> = คีย์ของคุณ (คัดลอกจากด้านบน)</p></div>
+        <div class="mk mk-term"><div class="mk-bar dk"><span class="d r"></span><span class="d y"></span><span class="d g"></span><span class="mk-tt">Command Prompt</span></div>
+          <div class="tb"><span class="pr">C:\\&gt;</span> set SENTINEL_ORG_KEY=${esc((s.apiKey||"sk_org_xxxx").slice(0,20))}…</div></div>
+      </div>
+      <div class="vstep">
+        <div class="vtxt"><div class="vnum">3</div><h4>รันตัวเฝ้าคลิปบอร์ด</h4><p>ป้องกันการก๊อป-วางข้อมูลลับลงทุกแอป (Slack, Word, แอป AI เดสก์ท็อป)</p></div>
+        <div class="mk mk-term"><div class="mk-bar dk"><span class="d r"></span><span class="d y"></span><span class="d g"></span><span class="mk-tt">Command Prompt</span></div>
+          <div class="tb"><span class="pr">C:\\&gt;</span> python agent/clipboard_guard.py<br><span class="ok">🛡️ SentinelAI Clipboard Guard</span><br><span class="dim2">กำลังเฝ้าคลิปบอร์ด... (Ctrl+C เพื่อหยุด)</span></div></div>
+      </div>
+      <div class="vstep">
+        <div class="vtxt"><div class="vnum">4</div><h4>สแกนหาไฟล์ลับในเครื่อง</h4><p>บอกได้ว่าไฟล์ไหนมีข้อมูลลับ ระดับใด</p></div>
+        <div class="mk mk-term"><div class="mk-bar dk"><span class="d r"></span><span class="d y"></span><span class="d g"></span><span class="mk-tt">Command Prompt</span></div>
+          <div class="tb"><span class="pr">C:\\&gt;</span> python agent/file_scanner.py Documents<br><span class="dim2">พบ 2 ไฟล์เข้าข่ายลับ:</span><br><span class="ok">🔴 Restricted&nbsp;&nbsp;&nbsp;งบการเงิน.xlsx</span><br><span class="ok">🟠 Confidential&nbsp;สัญญาลูกค้า.pdf</span></div></div>
+      </div>
+      <div class="vstep">
+        <div class="vtxt"><div class="vnum">5</div><h4>เด้งเตือนเมื่อเจอ + โผล่ในแท็บ "อุปกรณ์"</h4><p>พอก๊อปข้อมูลลับ จะมีป๊อปอัปเตือนมุมจอ และเครื่องนี้จะแสดงในแดชบอร์ด</p></div>
+        <div class="mk"><div class="mk-bar dk"><span class="d r"></span><span class="d y"></span><span class="d g"></span><span class="mk-tt">แจ้งเตือนมุมจอ</span></div>
+          <div class="mk-b" style="background:#0f172a; align-items:flex-end"><div class="card" style="width:100%;max-width:320px;background:#0f172a;border:1px solid #1e293b;border-radius:12px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,.5)"><div style="height:4px;background:#8b5cf6"></div><div style="padding:12px 14px"><div style="font-size:13px;font-weight:800;color:#fff">🛡️ ปิดบังข้อมูลลับในคลิปบอร์ดแล้ว</div><div style="font-size:11px;color:#94a3b8;margin-top:4px;line-height:1.5">พบเลขบัตรประชาชน · คลิปบอร์ดเหลือเฉพาะฉบับปิดบัง</div></div></div></div></div>
+      </div>
+    </div></div>
+
+  <div class="panel reveal" style="margin-top:16px"><h3>⚙️ การตั้งค่าองค์กร</h3>
+    <dl class="kv" style="margin-top:12px">
+      <dt>องค์กร</dt><dd>${esc(s.org||"-")}</dd>
+      <dt>แพ็กเกจ</dt><dd>Business (ทดลอง)</dd>
+      <dt>โหมดเริ่มต้น</dt><dd>เตือน (Warn) — ปรับได้ที่แท็บ "นโยบาย"</dd>
+      <dt>สมอง AI</dt><dd>BytePlus Dola-Seed 2.1 (เปิดเมื่อขึ้นเซิร์ฟเวอร์จริง)</dd>
+    </dl>
+    <div class="callout" style="margin-top:14px">ℹ️ เว็บนี้เป็น <b>เดโมในเบราว์เซอร์</b> — การติดตั้งจริง (Extension/Agent) และสมอง AI จะทำงานเมื่อเชื่อมกับ backend ที่ขึ้นเซิร์ฟเวอร์แล้ว</div></div>`;
+}
+
+/* ============================================================
+   5.5) SUPER ADMIN (มุมมองเจ้าของแพลตฟอร์ม — เดโม, ข้อมูลในหน่วยความจำ)
+   ============================================================ */
+let SA_ORGS=[
+  {id:"acme",   name:"บริษัท เอคเม่ คอร์ป จำกัด", plan:"Enterprise", status:"Active",    used:184, seats:200, quota:"5,000,000 โทเคน/เดือน", expire:"31 ธ.ค. 2569", devices:184, events:1240},
+  {id:"siam",   name:"สยามดิจิทัล กรุ๊ป",         plan:"Business",   status:"Active",    used:88,  seats:100, quota:"1,500,000 โทเคน/เดือน", expire:"15 ก.ย. 2569", devices:88,  events:642},
+  {id:"lotus",  name:"โลตัส ไฟแนนซ์",             plan:"Enterprise", status:"Trial",     used:22,  seats:50,  quota:"500,000 โทเคน/เดือน",   expire:"02 ส.ค. 2569", devices:20,  events:96},
+  {id:"nova",   name:"โนวา เฮลท์แคร์",            plan:"Business",   status:"Active",    used:64,  seats:80,  quota:"1,500,000 โทเคน/เดือน", expire:"20 ต.ค. 2569", devices:61,  events:410},
+  {id:"krung",  name:"กรุงไทย โลจิสติกส์",         plan:"Starter",    status:"Suspended", used:12,  seats:20,  quota:"200,000 โทเคน/เดือน",   expire:"10 มิ.ย. 2569", devices:12,  events:58},
+  {id:"zen",    name:"เซน ซอฟต์แวร์เฮาส์",        plan:"Starter",    status:"Trial",     used:8,   seats:15,  quota:"200,000 โทเคน/เดือน",   expire:"28 ก.ค. 2569", devices:7,   events:31},
+];
+const SA_ALERTS=[
+  {org:"บริษัท เอคเม่ คอร์ป จำกัด", user:"somchai.k", event:"พยายามส่งงบการเงินยังไม่ประกาศไป ChatGPT", level:"Restricted",   risk:92, time:"09:14"},
+  {org:"สยามดิจิทัล กรุ๊ป",         user:"dev.arm",   event:"พบ AWS Access Key ในข้อความที่ส่งไป Claude",   level:"Restricted",   risk:90, time:"09:02"},
+  {org:"โนวา เฮลท์แคร์",            user:"hr.mint",   event:"ส่งไฟล์เงินเดือนพนักงานไป Gemini",             level:"Confidential", risk:74, time:"08:47"},
+  {org:"โลตัส ไฟแนนซ์",             user:"naree.p",   event:"วางเลขบัตรประชาชนลูกค้า 13 หลักใน Copilot",     level:"Confidential", risk:72, time:"08:31"},
+  {org:"บริษัท เอคเม่ คอร์ป จำกัด", user:"law.ploy",  event:"ตรงกับเทมเพลตสัญญา NDA องค์กร",                level:"Confidential", risk:68, time:"08:12"},
+  {org:"เซน ซอฟต์แวร์เฮาส์",        user:"dev.beam",  event:"ดีลควบรวมกิจการ (M&A) ในข้อความไป DeepSeek",   level:"Restricted",   risk:82, time:"07:58"},
+];
+const SA_ST_TH={Active:"Active",Trial:"Trial",Suspended:"Suspended"};
+function renderSuperAdmin(){
+  setTimeout(bindSuperAdmin,0);
+  const tot=SA_ORGS.length;
+  const active=SA_ORGS.filter(o=>o.status==="Active").length;
+  const trial=SA_ORGS.filter(o=>o.status==="Trial").length;
+  const susp=SA_ORGS.filter(o=>o.status==="Suspended").length;
+  const dev=SA_ORGS.reduce((a,o)=>a+o.devices,0);
+  const evs=SA_ORGS.reduce((a,o)=>a+o.events,0);
+  const kpi=(ic,cnt,lbl,cls="")=>`<div class="panel kpi sa-kpi ${cls} reveal"><div class="k-top"><span class="k-ic">${ic}</span></div><div class="k-num tnum count" data-val="${cnt}">0</div><div class="k-lbl">${lbl}</div></div>`;
+  const rows=SA_ORGS.map((o,i)=>`<tr>
+      <td><b>${esc(o.name)}</b><div class="sa-id mono">${esc(o.id)}.sentinel.app</div></td>
+      <td><span class="sa-plan">${esc(o.plan)}</span></td>
+      <td><span class="sa-st sa-${o.status}">${SA_ST_TH[o.status]}</span></td>
+      <td class="tnum">${o.used}/${o.seats}<div class="sa-seatbar"><i style="width:${Math.round(o.used/o.seats*100)}%"></i></div></td>
+      <td style="color:var(--ink-dim);font-size:12.5px">${esc(o.quota)}</td>
+      <td class="tnum" style="color:var(--ink-dim)">${esc(o.expire)}</td>
+      <td><div class="sa-actions">
+        <button class="btn sm" data-sa="renew" data-i="${i}">ต่ออายุ</button>
+        <button class="btn sm" data-sa="seat" data-i="${i}">ปรับ seat</button>
+        <button class="btn sm ${o.status==="Suspended"?"sa-resume":"sa-suspend"}" data-sa="toggle" data-i="${i}">${o.status==="Suspended"?"เปิดใช้":"ระงับ"}</button>
+      </div></td></tr>`).join("");
+  const feed=SA_ALERTS.map(e=>`<div class="sa-feed-row reveal">
+      <span class="sa-sev sev-${e.level}">${e.risk}</span>
+      <div class="sa-feed-main">
+        <div class="sa-feed-top"><b>${esc(e.event)}</b><span class="badge lbl-${e.level}">${e.level}</span></div>
+        <div class="sa-feed-sub">🏢 ${esc(e.org)} · 👤 ${esc(e.user)} · 🕐 ${esc(e.time)} น.</div>
+      </div></div>`).join("");
+  return `
+  <div class="page-head reveal" style="margin:22px 0 18px">
+    <div class="eyebrow sa-eyebrow">Platform Owner · God View</div>
+    <h1 class="section-title sa-title">👑 Super Admin — ศูนย์ควบคุมทุกองค์กร</h1>
+    <div class="section-desc">มุมมองเจ้าของแพลตฟอร์ม: เห็นทุกองค์กรที่ใช้ SentinelAI สถานะแพ็กเกจ การใช้งาน และ <b style="color:#fcd34d">แจ้งเตือนความปลอดภัยข้ามทุกองค์กร</b> — ข้อมูลตัวอย่าง (เดโม)</div></div>
+  <div class="kpis sa-kpis">
+    ${kpi("🏢",tot,"องค์กรทั้งหมด")}
+    ${kpi("✅",active,"Active","ok")}
+    ${kpi("🧪",trial,"Trial","tr")}
+    ${kpi("⛔",susp,"Suspended","sp")}
+    ${kpi("💻",dev,"อุปกรณ์รวม")}
+    ${kpi("📊",evs,"เหตุการณ์รวม")}
+  </div>
+  <div class="panel sa-panel reveal" style="margin-top:16px"><h3>🏢 องค์กรทั้งหมดในแพลตฟอร์ม</h3>
+    <div class="tbl-wrap" style="margin-top:10px"><table class="tbl sa-tbl" id="sa-table"><thead><tr>
+      <th>องค์กร</th><th>แพ็กเกจ</th><th>สถานะ</th><th>Seats (ใช้ไป/ทั้งหมด)</th><th>Quota</th><th>วันหมดอายุ</th><th>จัดการ</th>
+    </tr></thead><tbody>${rows}</tbody></table></div></div>
+  <div class="panel sa-panel sa-alerts reveal" style="margin-top:16px"><h3>🚨 แจ้งเตือนความปลอดภัย (ข้ามทุกองค์กร)</h3>
+    <div class="section-desc" style="margin:4px 0 12px;max-width:none">เหตุการณ์ความเสี่ยงสูงจากทุกองค์กรบนแพลตฟอร์ม — เจ้าของแพลตฟอร์มเห็นทั้งหมดแบบรวมศูนย์</div>
+    <div class="sa-feed">${feed}</div></div>`;
+}
+function bindSuperAdmin(){
+  const t=$("#sa-table"); if(!t) return;
+  t.onclick=e=>{ const b=e.target.closest("[data-sa]"); if(!b) return;
+    const i=+b.dataset.i, o=SA_ORGS[i]; if(!o) return; const act=b.dataset.sa;
+    if(act==="renew"){ toast(`ต่ออายุแพ็กเกจของ "${o.name}" อีก 1 ปีแล้ว (เดโม)`); }
+    else if(act==="seat"){ toast(`เปิดหน้าปรับจำนวน seat ของ "${o.name}" (เดโม)`); }
+    else if(act==="toggle"){
+      o.status = o.status==="Suspended" ? "Active" : "Suspended";
+      toast(o.status==="Suspended" ? `⛔ ระงับการใช้งาน "${o.name}" แล้ว` : `✅ เปิดใช้งาน "${o.name}" อีกครั้งแล้ว`);
+      go("superadmin");
+    }
+  };
+}
+
+/* ============================================================
+   6) ROUTER
+   ============================================================ */
+function go(r){
+  if(!ROUTES[r]) r="overview";
+  document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("on",a.dataset.r===r));
+  $("#view").innerHTML=ROUTES[r]();
+  scanReveal($("#view"));
+  animateCount($("#view"));
+  window.scrollTo({top:0,behavior:"instant"});
+  if(location.hash!=="#"+r) history.replaceState(null,"","#"+r);
+}
+$("#nav").addEventListener("click",e=>{const a=e.target.closest("a[data-r]"); if(a){e.preventDefault(); go(a.dataset.r);}});
+window.addEventListener("hashchange",()=>{ if(session()) go(location.hash.slice(1)); });
+
+/* ---- init: gate ด้วย auth ---- */
+wireAuth();
+if(session()){ enterApp(session(), false); }
+else { showAuth(); }
+</script>
+
+</body>
+</html>

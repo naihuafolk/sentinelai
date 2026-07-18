@@ -1,0 +1,14 @@
+**/__pycache__
+**/*.pyc
+**/*.pyo
+backend/sentinel.db
+backend/sentinel.db-wal
+backend/sentinel.db-shm
+backend/.env
+backend/.jwt_secret
+backend/.venv
+.git
+*.pdf
+*.md
+SentinelAI-Web.html
+node_modules
