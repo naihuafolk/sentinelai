@@ -614,20 +614,9 @@ function loadingBlock(msg = "กำลังโหลด…") { return `<div cla
 async function ensureConfig() { if (!state.config) state.config = await api.get("/config"); return state.config; }
 async function ensurePolicies() { state.policies = await api.get("/policies"); return state.policies; }
 
-async function seedDemo(btn) {
-  if (btn) { btn.disabled = true; btn.dataset.o = btn.innerHTML; btn.innerHTML = '<span class="spinner"></span> กำลังสร้างข้อมูล…'; }
-  try {
-    const r = await api.post("/admin/seed-demo");
-    toast(`โหลดข้อมูลตัวอย่างสำเร็จ — ${fmtNum(r.seeded_events)} เหตุการณ์`, "ok");
-    state.stats = null;
-    route();
-  } catch (e) { toast("โหลดข้อมูลตัวอย่างไม่สำเร็จ: " + e.message, "err"); }
-  finally { if (btn && btn.dataset.o) { btn.disabled = false; btn.innerHTML = btn.dataset.o; } }
-}
-function emptyState(title, desc, { seed = true } = {}) {
+function emptyState(title, desc) {
   return `<div class="card"><div class="empty">
     <div class="em-ico">🛡️</div><h3>${esc(title)}</h3><p>${esc(desc)}</p>
-    ${seed ? '<button class="btn btn-primary" id="empty-seed">โหลดข้อมูลตัวอย่าง</button>' : ""}
   </div></div>`;
 }
 function connError(e) {
@@ -920,8 +909,7 @@ async function renderOverview() {
   const isEmpty = stats.detections_30d === 0 && Object.keys(stats.by_channel || {}).length === 0;
   if (isEmpty) {
     setView(pageHead("ภาพรวม", "สรุปการป้องกันข้อมูลลับรั่วไหลใน 30 วันล่าสุด") +
-      emptyState("ยังไม่มีเหตุการณ์", "ระบบยังไม่ได้รับข้อมูลจาก Agent/Extension — ลองโหลดข้อมูลตัวอย่างเพื่อดูการทำงานของ Dashboard"));
-    $("#empty-seed")?.addEventListener("click", (e) => seedDemo(e.target));
+      emptyState("ยังไม่มีเหตุการณ์", "ติดตั้ง Extension (เบราว์เซอร์) หรือ Agent (คอม) แล้วใส่ Org Key — เหตุการณ์จะเข้ามาที่นี่อัตโนมัติ"));
     return;
   }
 
@@ -1037,8 +1025,7 @@ async function loadEvents() {
   if (!data.total) {
     box.innerHTML = (evState.decision || evState.channel || evState.label || evState.department || evState.search)
       ? `<div class="empty"><div class="em-ico">🔍</div><h3>ไม่พบเหตุการณ์ที่ตรงกับตัวกรอง</h3><p>ลองปรับหรือล้างตัวกรอง</p></div>`
-      : emptyState("ยังไม่มีเหตุการณ์", "โหลดข้อมูลตัวอย่างเพื่อทดลองใช้งาน Audit Log");
-    $("#empty-seed")?.addEventListener("click", (e) => seedDemo(e.target));
+      : emptyState("ยังไม่มีเหตุการณ์", "ติดตั้ง Extension/Agent แล้วใส่ Org Key เพื่อเริ่มบันทึกเหตุการณ์");
     return;
   }
   const rows = data.items.map((e) => eventRow(e)).join("");
@@ -1863,12 +1850,6 @@ async function renderSettings() {
       <div class="card-head"><h2 class="card-title">🖥️ เครื่องที่ใช้สิทธิ์ (Devices)</h2></div>
       <p class="micro" style="margin:0 0 12px">ทุกเครื่องที่ติดตั้ง + ใช้ Org Key ของคุณ · กด “ถอด” เพื่อคืนสิทธิ์ (seat) · ⚠️ = สงสัยแชร์คีย์</p>
       <div id="dev-body">${loadingBlock()}</div>
-    </div>
-
-    <div class="card" style="margin-top:16px">
-      <div class="card-head"><h2 class="card-title">🧰 เครื่องมือ</h2></div>
-      <p class="micro" style="margin:0 0 12px">ใส่ข้อมูลตัวอย่าง (เหตุการณ์ 14 วัน + เอกสารลับ) ให้องค์กรของคุณ เพื่อทดลองใช้งาน Dashboard ทั้งหมด</p>
-      <button class="btn btn-primary" id="btn-seed">โหลดข้อมูลตัวอย่าง (Seed Demo)</button>
     </div>`;
 
   // คัดลอก API key
@@ -1886,7 +1867,6 @@ async function renderSettings() {
     toast("คัดลอก API key แล้ว", "ok");
   });
 
-  $("#btn-seed").addEventListener("click", (e) => seedDemo(e.currentTarget));
   loadDevices();
   loadBilling();
   $("#btn-ping")?.addEventListener("click", async (e) => {
