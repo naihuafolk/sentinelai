@@ -1773,6 +1773,7 @@ async function renderSettings() {
       <div style="display:flex;gap:12px;flex-wrap:wrap">
         <a class="btn btn-primary" href="/api/v1/download/extension.zip" download>🌐 ดาวน์โหลด Browser Extension (Chrome/Edge)</a>
         <a class="btn btn-ghost" href="/api/v1/download/agent.zip" download>💻 ดาวน์โหลด Endpoint Agent (คอม)</a>
+        <a class="btn btn-ghost" href="/guide.html" target="_blank">📘 คู่มือใช้งาน + สถานการณ์จริง</a>
       </div>
     </div>
 

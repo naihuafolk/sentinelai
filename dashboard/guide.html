@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SentinelAI — คู่มือใช้งาน + สถานการณ์จริง</title>
+<style>
+  :root{
+    --bg:#070b10; --bg2:#0b1119; --panel:rgba(255,255,255,.04); --panel2:rgba(255,255,255,.06);
+    --border:rgba(255,255,255,.09); --border2:rgba(255,255,255,.15);
+    --ink:#e9eef3; --ink2:#aeb9c4; --dim:#7c8894;
+    --em:#34d399; --cy:#22d3ee;
+    --allow:#34d399; --warn:#f59e0b; --redact:#38bdf8; --block:#fb5670;
+    --font:"Segoe UI","Sarabun","IBM Plex Sans Thai",system-ui,-apple-system,"Noto Sans Thai",sans-serif;
+    --mono:"SFMono-Regular",ui-monospace,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{overflow-x:hidden}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.65;font-size:16px;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  .aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+  .aurora i{position:absolute;border-radius:50%;filter:blur(95px);opacity:.45;mix-blend-mode:screen}
+  .aurora i:nth-child(1){width:500px;height:500px;background:#0f5c46;top:-130px;left:-90px}
+  .aurora i:nth-child(2){width:440px;height:440px;background:#164e63;top:35%;right:-120px}
+  .aurora i:nth-child(3){width:420px;height:420px;background:#3b2f6e;bottom:-140px;left:35%}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 20px}
+  section{padding:32px 0;border-top:1px solid var(--border)}
+  h1,h2,h3,h4{margin:0;line-height:1.25;letter-spacing:-.01em}
+  .eyebrow{font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:var(--em);font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .eyebrow::before{content:"";width:22px;height:2px;background:var(--em);border-radius:2px}
+  h2{font-size:clamp(22px,3.4vw,30px);font-weight:800;margin-bottom:8px}
+  .sub{color:var(--ink2);font-size:15px;margin-bottom:22px;max-width:72ch}
+
+  /* hero */
+  .hero{padding:60px 0 34px;text-align:center}
+  .badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border:1px solid var(--border2);border-radius:999px;background:var(--panel);font-size:13px;color:var(--ink2);margin-bottom:20px}
+  .badge .dot{width:8px;height:8px;border-radius:50%;background:var(--em);box-shadow:0 0 10px rgba(52,211,153,.5)}
+  .hero h1{font-size:clamp(28px,5.5vw,48px);font-weight:850;letter-spacing:-.02em}
+  .hero h1 b{background:linear-gradient(120deg,#fff,#7de4c0 60%,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{color:var(--ink2);font-size:clamp(15px,2vw,18px);max-width:60ch;margin:16px auto 0}
+
+  .legend{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:24px}
+  .lg{display:inline-flex;align-items:center;gap:7px;font-size:13px;background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:6px 13px}
+  .lg b{width:9px;height:9px;border-radius:50%}
+
+  /* scenario card */
+  .scn{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:22px;margin-bottom:20px}
+  .scn-h{display:flex;gap:14px;align-items:flex-start;margin-bottom:8px}
+  .scn-n{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-family:var(--mono);font-size:15px}
+  .scn-h h3{font-size:18px;font-weight:750}
+  .scn-h .who{font-size:12.5px;color:var(--dim);margin-top:2px}
+  .scn-desc{color:var(--ink2);font-size:14.5px;margin:4px 0 16px}
+  .flow{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center}
+  .arrow{color:var(--em);font-size:24px;text-align:center}
+  .step-lbl{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-weight:700}
+  .annot{font-size:13px;color:var(--ink2);margin-top:10px;padding-left:14px;border-left:2px solid var(--border2)}
+  .annot b{color:var(--ink)}
+
+  /* ---- Mockups ---- */
+  .mk{border-radius:12px;overflow:hidden;max-width:100%;box-shadow:0 14px 40px rgba(0,0,0,.4)}
+  /* browser */
+  .brow{background:#e9edf2;border:1px solid #cfd6de}
+  .brow-bar{display:flex;align-items:center;gap:10px;padding:9px 12px;background:#dde3ea}
+  .dots{display:flex;gap:6px}.dots i{width:11px;height:11px;border-radius:50%;display:block}
+  .dots i:nth-child(1){background:#ff5f57}.dots i:nth-child(2){background:#febc2e}.dots i:nth-child(3){background:#28c840}
+  .addr{flex:1;background:#fff;border-radius:7px;padding:5px 12px;font-size:12.5px;color:#3a4756;font-family:var(--mono);display:flex;align-items:center;gap:6px;border:1px solid #cfd6de}
+  /* chatgpt inside */
+  .gpt{background:#212121;padding:16px;color:#ececec}
+  .gpt-top{font-size:12px;color:#9a9a9a;margin-bottom:12px}
+  .gpt-input{background:#2f2f2f;border:1px solid #444;border-radius:14px;padding:12px 14px;font-size:14px;color:#ececec;position:relative}
+  .gpt-input .send{position:absolute;right:10px;bottom:10px;width:28px;height:28px;border-radius:8px;background:#565656;display:grid;place-items:center;color:#fff;font-size:13px}
+  .typed{color:#fff}.secret{background:rgba(251,86,112,.28);border-radius:3px;padding:0 3px;color:#ffd7dd}
+  /* intercept banner */
+  .intercept{margin-top:10px;border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;font-size:13.5px;border:1px solid}
+  .intercept .ic{font-size:20px;line-height:1}
+  .i-block{background:rgba(251,86,112,.14);border-color:rgba(251,86,112,.4);color:#ffc9d2}
+  .i-warn{background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.4);color:#ffe0ab}
+  .intercept b{color:#fff}
+  .i-btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .i-btn{font-size:12.5px;border-radius:8px;padding:6px 12px;font-weight:600;border:1px solid transparent}
+  .i-btn.stop{background:#fb5670;color:#3a0a13}.i-btn.keep{background:transparent;border-color:var(--border2);color:var(--ink2)}
+  /* extension popup */
+  .extpop{width:270px;background:#0f172a;border:1px solid #24324a;border-radius:14px;padding:14px;color:#e2e8f0}
+  .extpop .hd{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:#34d399}
+  .extpop .st{margin-top:10px;font-size:12.5px;color:#94a3b8;display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid #1e293b}
+  .cnt{background:#fb5670;color:#fff;border-radius:6px;padding:1px 8px;font-weight:700;font-size:12px}
+  /* agent toast */
+  .agentpop{width:330px;background:#0f172a;border:1px solid #24324a;border-radius:12px;overflow:hidden}
+  .agentpop .cbar{height:5px}
+  .agentpop .bd{padding:14px 16px;color:#f1f5f9}
+  .agentpop .brand{font-size:9.5px;letter-spacing:.12em;color:#34d399;font-weight:700}
+  .agentpop .ttl{font-size:15px;font-weight:800;margin:4px 0 6px;display:flex;gap:8px;align-items:center}
+  .agentpop .meta{font-size:11.5px;color:#94a3b8;line-height:1.6}
+  .agentpop .rsn{background:#0b1220;border-radius:8px;padding:8px 10px;font-size:12px;color:#cbd5e1;margin:9px 0}
+  .agentpop .ok{background:#10b981;color:#04160e;text-align:center;border-radius:8px;padding:7px;font-weight:700;font-size:12.5px}
+  /* screenshot thumb */
+  .shot{background:#fff;border-radius:8px;padding:14px;color:#1a1a1a;font-family:var(--mono);font-size:12.5px;line-height:1.7;position:relative;border:1px solid #d0d0d0}
+  .shot .flash{position:absolute;inset:0;border:3px solid #fb5670;border-radius:8px;box-shadow:0 0 0 4px rgba(251,86,112,.2)}
+  /* terminal */
+  .term{background:#0a0e14;border:1px solid #1e2733;border-radius:12px;overflow:hidden;font-family:var(--mono);font-size:12.5px}
+  .term .tb{display:flex;gap:6px;padding:8px 11px;background:#11161f}
+  .term .tbd{padding:12px 14px;color:#cbd5e1;line-height:1.75;overflow-x:auto}
+  .g{color:#4ade80}.c{color:#38bdf8}.d{color:#64748b}.r{color:#fb7185}.y{color:#fbbf24}
+  /* dashboard row */
+  .dash{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .dash .dh{padding:10px 14px;font-size:12.5px;color:var(--dim);border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
+  .dtable{width:100%;border-collapse:collapse;font-size:12.5px}
+  .dtable td{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.05)}
+  .pill{display:inline-block;border-radius:6px;padding:2px 9px;font-size:11px;font-weight:700}
+  .p-block{background:rgba(251,86,112,.16);color:#fb5670}.p-redact{background:rgba(56,189,248,.16);color:#38bdf8}.p-warn{background:rgba(245,158,11,.16);color:#fbbf24}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .note{background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.25);border-radius:14px;padding:15px 17px;font-size:14px;color:var(--ink2);display:flex;gap:11px}
+  .note b{color:var(--ink)}
+  ol.steps{margin:0;padding-left:20px;color:var(--ink2);font-size:14px;line-height:2}
+  ol.steps b{color:var(--ink)}
+  footer{padding:34px 0 60px;text-align:center;color:var(--dim);font-size:13px;border-top:1px solid var(--border)}
+  @media(max-width:820px){.flow{grid-template-columns:1fr}.arrow{transform:rotate(90deg)}.cols{grid-template-columns:1fr}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="aurora"><i></i><i></i><i></i></div>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="badge"><span class="dot"></span> SentinelAI · คู่มือใช้งาน · sentinelai.help</div>
+    <h1>ตอนใช้งานจริง<br><b>มันทำงานยังไง</b></h1>
+    <p>จำลองสถานการณ์จริงทีละขั้น — ทั้งฝั่ง <b>Chrome (เบราว์เซอร์)</b> และ <b>Agent (ในคอมพิวเตอร์)</b> ให้เห็นว่าเมื่อพนักงานเผลอเอาข้อมูลลับไปให้ AI ระบบเตือน/บล็อกอย่างไร</p>
+    <div class="legend">
+      <span class="lg"><b style="background:var(--allow)"></b> Allow ปล่อยผ่าน</span>
+      <span class="lg"><b style="background:var(--warn)"></b> Warn เตือน</span>
+      <span class="lg"><b style="background:var(--redact)"></b> Redact ปิดบัง</span>
+      <span class="lg"><b style="background:var(--block)"></b> Block บล็อก</span>
+    </div>
+  </header>
+
+  <!-- ============ ฝั่ง CHROME ============ -->
+  <section>
+    <div class="eyebrow">ส่วนที่ 1 · ฝั่ง Chrome (เบราว์เซอร์)</div>
+    <h2>🌐 บนเว็บ AI (ChatGPT / Gemini / Claude / Copilot)</h2>
+    <p class="sub">หลังติดตั้ง Extension แล้ว มันจะทำงานเงียบ ๆ อยู่เบื้องหลังทุกครั้งที่พนักงานเปิดเว็บ AI — ตรวจ “ก่อน” กด Enter/Send เสมอ</p>
+
+    <!-- Scenario 1: block credit card -->
+    <div class="scn">
+      <div class="scn-h">
+        <div class="scn-n" style="background:var(--block);color:#3a0a13">1</div>
+        <div><h3>พนักงานจะวางเลขบัตรลูกค้าใน ChatGPT</h3>
+        <div class="who">แผนกการเงิน · กำลังให้ AI ช่วยร่างอีเมลทวงหนี้</div></div>
+      </div>
+      <div class="scn-desc">พนักงานพิมพ์/วางข้อความที่มี <b>เลขบัตรเครดิตลูกค้า</b> แล้วกำลังจะกดส่งให้ ChatGPT ช่วยเขียนอีเมล</div>
+      <div class="flow">
+        <div>
+          <div class="step-lbl">ก่อนกดส่ง</div>
+          <div class="mk brow">
+            <div class="brow-bar"><span class="dots"><i></i><i></i><i></i></span><span class="addr">🔒 chatgpt.com</span></div>
+            <div class="gpt">
+              <div class="gpt-top">ChatGPT 4o</div>
+              <div class="gpt-input"><span class="typed">ช่วยเขียนอีเมลทวงชำระ ลูกค้าบัตร <span class="secret">4111 1111 1111 1111</span> ยอดค้าง 12,500 บาท</span><span class="send">➤</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="arrow">➜</div>
+        <div>
+          <div class="step-lbl">SentinelAI ดักทันที</div>
+          <div class="mk brow">
+            <div class="brow-bar"><span class="dots"><i></i><i></i><i></i></span><span class="addr">🔒 chatgpt.com</span></div>
+            <div class="gpt">
+              <div class="gpt-top">ChatGPT 4o</div>
+              <div class="gpt-input" style="border-color:#fb5670"><span class="typed" style="opacity:.5">ช่วยเขียนอีเมลทวงชำระ ลูกค้าบัตร ██████████ ...</span><span class="send">➤</span></div>
+              <div class="intercept i-block"><span class="ic">⛔</span><div><b>บล็อก: พบเลขบัตรเครดิต</b><br>ข้อมูลถูกหยุดไว้ ไม่ถูกส่งออกไปยัง ChatGPT (ความเสี่ยง 75/100)
+                <div class="i-btns"><span class="i-btn stop">เข้าใจแล้ว</span><span class="i-btn keep">ดูฉบับปิดบัง</span></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annot">🛡️ <b>ผลลัพธ์:</b> ข้อความไม่ถูกส่ง · พนักงานเห็นเหตุผล · เหตุการณ์ถูกบันทึกเข้า Dashboard (เก็บแค่ metadata ไม่เก็บเลขบัตรจริง)</div>
+    </div>
+
+    <!-- Scenario 2: warn strategy -->
+    <div class="scn">
+      <div class="scn-h">
+        <div class="scn-n" style="background:var(--warn);color:#3a2708">2</div>
+        <div><h3>พนักงานจะถามกลยุทธ์ราคาของบริษัท</h3>
+        <div class="who">แผนกการตลาด · ข้อมูลอ่อนไหวแต่ไม่ใช่ความลับตายตัว</div></div>
+      </div>
+      <div class="scn-desc">เนื้อหาเข้าข่าย “กลยุทธ์ธุรกิจ” — ระบบไม่บล็อกทันที แต่ <b>เตือน</b> ให้พนักงานตัดสินใจเอง (กัน false positive)</div>
+      <div class="mk brow" style="max-width:620px">
+        <div class="brow-bar"><span class="dots"><i></i><i></i><i></i></span><span class="addr">🔒 gemini.google.com</span></div>
+        <div class="gpt" style="background:#1e1f20">
+          <div class="gpt-top">Gemini</div>
+          <div class="gpt-input" style="border-color:#f59e0b"><span class="typed">แผนลดราคา Q3 เราจะตัดราคาคู่แข่ง 15% เจาะกลุ่ม...</span><span class="send">➤</span></div>
+          <div class="intercept i-warn"><span class="ic">⚠️</span><div><b>เตือน: อาจเป็นข้อมูลกลยุทธ์บริษัท</b><br>คุณแน่ใจไหมว่าจะส่งข้อมูลนี้ไปยัง AI สาธารณะ?
+            <div class="i-btns"><span class="i-btn stop">ยกเลิก ปลอดภัยไว้ก่อน</span><span class="i-btn keep">ส่งต่อ ฉันยืนยัน</span></div></div></div>
+        </div>
+      </div>
+      <div class="annot">💡 <b>3 ระดับความเข้ม:</b> ข้อมูลลับแข็ง (บัตร/รหัส) → บล็อก · อ่อนไหว (กลยุทธ์) → เตือนให้เลือก · ทั่วไป → ปล่อยผ่านเงียบ ๆ ไม่รบกวน</div>
+    </div>
+
+    <!-- extension popup -->
+    <div class="scn">
+      <div class="scn-h">
+        <div class="scn-n" style="background:var(--em);color:#04160e">3</div>
+        <div><h3>ไอคอน 🛡️ บนแถบ Chrome</h3><div class="who">พนักงานกดดูสถานะได้ตลอด</div></div>
+      </div>
+      <div class="cols">
+        <div>
+          <div class="step-lbl">คลิกไอคอน SentinelAI</div>
+          <div class="mk extpop">
+            <div class="hd">🛡️ SentinelAI</div>
+            <div style="font-size:12px;color:#22d3ee;margin-top:3px">● กำลังป้องกันอยู่</div>
+            <div class="st"><span>องค์กร</span><b style="color:#e2e8f0">IMAI</b></div>
+            <div class="st"><span>บล็อกวันนี้</span><span class="cnt">3</span></div>
+            <div class="st"><span>เว็บที่เฝ้า</span><span>ChatGPT · Gemini · Claude</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="step-lbl">ทำงานอัตโนมัติ</div>
+          <ol class="steps">
+            <li>เปิดเว็บ AI → <b>ทำงานเองทันที</b> ไม่ต้องกดอะไร</li>
+            <li>ตัวเลขแดงบนไอคอน = จำนวนครั้งที่ดักวันนี้</li>
+            <li>ทุกเหตุการณ์ → เข้า <b>Dashboard</b> ของแอดมิน</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ฝั่งคอม ============ -->
+  <section>
+    <div class="eyebrow">ส่วนที่ 2 · ฝั่ง Agent (ในคอมพิวเตอร์)</div>
+    <h2>💻 นอกเบราว์เซอร์ (คลิปบอร์ด · ไฟล์ · สกรีนช็อต)</h2>
+    <p class="sub">Agent เฝ้าระดับเครื่อง — ดักตอน “คัดลอก (Ctrl+C)” เพื่อไปวางในแอปเดสก์ท็อป (ChatGPT app, LINE, อีเมล, Word) และ <b>สแกนสกรีนช็อต</b>ด้วย</p>
+
+    <!-- Scenario 4: clipboard thai id -->
+    <div class="scn">
+      <div class="scn-h">
+        <div class="scn-n" style="background:var(--block);color:#3a0a13">4</div>
+        <div><h3>พนักงานคัดลอกเลขบัตรประชาชนจาก Excel</h3>
+        <div class="who">แผนก HR · จะเอาไปวางถาม AI ในแอป ChatGPT เดสก์ท็อป</div></div>
+      </div>
+      <div class="scn-desc">พอกด <b>Ctrl+C</b> ที่เลขบัตรประชาชน → Agent ตรวจเจอทันที → <b>ล้างออกจากคลิปบอร์ด</b> (วางไม่ได้) + เด้งเตือนมุมจอ</div>
+      <div class="flow">
+        <div>
+          <div class="step-lbl">พนักงานกด Ctrl+C</div>
+          <div class="mk term">
+            <div class="tb"><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="tbd"><span class="d"># ข้อมูลใน Excel ที่คัดลอก</span><br>สมชาย ใจดี &nbsp; <span class="r">1-1017-00207-25-1</span><br><span class="d"># → คลิปบอร์ดตอนนี้มีเลขบัตร ปชช.</span></div>
+          </div>
+        </div>
+        <div class="arrow">➜</div>
+        <div>
+          <div class="step-lbl">Agent เด้งเตือนมุมจอ</div>
+          <div class="mk agentpop">
+            <div class="cbar" style="background:#fb5670"></div>
+            <div class="bd">
+              <div class="brand">🛡️ SENTINELAI</div>
+              <div class="ttl">⛔ บล็อก: ล้างข้อมูลลับแล้ว</div>
+              <div class="meta">ระดับ: ลับที่สุด · ความเสี่ยง 82/100<br>ปลายทาง: ChatGPT (Desktop)</div>
+              <div class="rsn">• พบเลขบัตรประชาชน (ผ่าน checksum)</div>
+              <div class="ok">เข้าใจแล้ว</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annot">🛡️ <b>ผลลัพธ์:</b> คลิปบอร์ดถูกแทนด้วยข้อความ “[SentinelAI: ล้างข้อมูลลับแล้ว]” → พนักงานวางในแอปไหนก็ไม่ได้เลขบัตรจริง</div>
+    </div>
+
+    <!-- Scenario 5: screenshot -->
+    <div class="scn">
+      <div class="scn-h">
+        <div class="scn-n" style="background:var(--block);color:#3a0a13">5</div>
+        <div><h3>พนักงานกดสกรีนช็อตหน้าจอที่มีข้อมูลลับ</h3>
+        <div class="who">กด PrintScreen / Snipping Tool → รูปไปอยู่ในคลิปบอร์ด</div></div>
+      </div>
+      <div class="scn-desc">แคปหน้าจอก็หนีไม่พ้น! Agent จับรูปในคลิปบอร์ด → ส่งให้ <b>AI Vision อ่านรูป</b> → เจอข้อมูลลับ → บล็อก</div>
+      <div class="flow">
+        <div>
+          <div class="step-lbl">รูปสกรีนช็อต (ในคลิปบอร์ด)</div>
+          <div class="mk shot">
+            <div class="flash"></div>
+            <b>ACME Corp — Customer Record</b><br>
+            Credit Card: 4111 1111 1111 1111<br>
+            Expiry 12/26 &nbsp; CVV 123<br>
+            Name: John Doe
+          </div>
+        </div>
+        <div class="arrow">➜</div>
+        <div>
+          <div class="step-lbl">AI Vision อ่านรูป → บล็อก</div>
+          <div class="mk agentpop">
+            <div class="cbar" style="background:#fb5670"></div>
+            <div class="bd">
+              <div class="brand">🛡️ SENTINELAI · SCREENSHOT GUARD</div>
+              <div class="ttl">⛔ บล็อก: พบข้อมูลลับในรูป</div>
+              <div class="meta">ระดับ: ลับ · ความเสี่ยง 72/100 · AI Vision</div>
+              <div class="rsn">• AI อ่านรูปพบ: บัตรเครดิตเต็มหมายเลข + CVV + วันหมดอายุ</div>
+              <div class="ok">เข้าใจแล้ว</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annot">📸 <b>พิสูจน์จริงแล้ว:</b> ทดสอบสดกับเซิร์ฟเวอร์จริง — AI อ่านตัวอักษรในรูปออกและบล็อกได้ (นี่คือสิ่งที่ DLP ทั่วไปทำไม่ได้)</div>
+    </div>
+
+    <!-- terminal running -->
+    <div class="scn">
+      <div class="scn-h">
+        <div class="scn-n" style="background:var(--em);color:#04160e">6</div>
+        <div><h3>Agent ทำงานเงียบ ๆ เบื้องหลัง</h3><div class="who">เปิดเองทุกครั้งที่เปิดเครื่อง</div></div>
+      </div>
+      <div class="mk term" style="max-width:640px">
+        <div class="tb"><span class="dots"><i></i><i></i><i></i></span></div>
+        <div class="tbd">
+          <span class="g">🛡️  SentinelAI Clipboard Guard — กำลังเฝ้าคลิปบอร์ด</span><br>
+          <span class="d">   ผู้ใช้: somchai · เครื่อง: FIN-PC-014</span><br>
+          <span class="c">   เซิร์ฟเวอร์: ออนไลน์ ✓</span><br>
+          <span class="c">   กันสกรีนช็อต/รูป: เปิด ✓</span><br>
+          <span class="d">   ────────────────────────</span><br>
+          <span class="r">   [block] Restricted risk=82</span> <span class="d">← เลขบัตร ปชช.</span><br>
+          <span class="r">   [image:block] Confidential risk=72</span> <span class="d">← สกรีนช็อต</span>
+        </div>
+      </div>
+      <div class="annot">💡 ติดตั้งครั้งเดียวด้วย <b>install.bat</b> (ดับเบิลคลิก) → ใส่ Org Key → ทำงานอัตโนมัติตลอด</div>
+    </div>
+  </section>
+
+  <!-- ============ Dashboard ============ -->
+  <section>
+    <div class="eyebrow">ส่วนที่ 3 · ผู้ดูแลเห็นอะไร</div>
+    <h2>📊 ทุกเหตุการณ์เข้า Dashboard อัตโนมัติ</h2>
+    <p class="sub">ไม่ว่าจะดักจากเบราว์เซอร์หรือคอม เหตุการณ์ทั้งหมดไหลเข้าที่เดียว ให้แอดมินเห็นภาพรวม (เก็บแค่ metadata ตาม PDPA — ไม่เก็บเนื้อหาดิบ)</p>
+    <div class="mk dash">
+      <div class="dh"><span>เหตุการณ์ล่าสุด</span><span>องค์กร: IMAI</span></div>
+      <table class="dtable">
+        <tr><td>14:32</td><td>somchai · การเงิน</td><td>🌐 ChatGPT</td><td>บัตรเครดิต</td><td><span class="pill p-block">block</span></td></tr>
+        <tr><td>14:20</td><td>nid · HR</td><td>💻 คลิปบอร์ด</td><td>บัตรประชาชน</td><td><span class="pill p-block">block</span></td></tr>
+        <tr><td>13:58</td><td>ploy · HR</td><td>💻 สกรีนช็อต</td><td>บัตรเครดิต (รูป)</td><td><span class="pill p-block">block</span></td></tr>
+        <tr><td>13:45</td><td>arm · การตลาด</td><td>🌐 Gemini</td><td>กลยุทธ์ธุรกิจ</td><td><span class="pill p-warn">warn</span></td></tr>
+        <tr><td>11:10</td><td>ken · บัญชี</td><td>💻 คลิปบอร์ด</td><td>เลขบัญชี</td><td><span class="pill p-redact">redact</span></td></tr>
+      </table>
+    </div>
+    <div class="note" style="margin-top:18px">🔐 <div><b>ความเป็นส่วนตัว:</b> Dashboard เก็บแค่ “ใคร/เมื่อไหร่/ประเภท/การตัดสิน” — <b>ไม่เก็บเลขบัตรหรือเนื้อหาจริง</b> ที่พนักงานพิมพ์ (ปรับได้ตามนโยบายองค์กร)</div></div>
+  </section>
+
+  <!-- summary -->
+  <section>
+    <div class="eyebrow">สรุป</div>
+    <h2>ครอบคลุมทุกทางที่ข้อมูลจะรั่ว</h2>
+    <div class="cols">
+      <div class="scn" style="margin:0">
+        <h3 style="font-size:16px;margin-bottom:10px">🌐 ฝั่ง Chrome</h3>
+        <ol class="steps"><li>พิมพ์/วางในเว็บ AI → ดักก่อนส่ง</li><li>บล็อก/เตือน/ปิดบัง ตามความเสี่ยง</li><li>ทำงานเงียบ ไม่รบกวนงานปกติ</li></ol>
+      </div>
+      <div class="scn" style="margin:0">
+        <h3 style="font-size:16px;margin-bottom:10px">💻 ฝั่งคอม</h3>
+        <ol class="steps"><li>คัดลอก (Ctrl+C) ข้อมูลลับ → ล้าง+เตือน</li><li>สกรีนช็อต → AI อ่านรูป → บล็อก</li><li>ครอบคลุมทุกแอป (LINE, อีเมล, Word)</li></ol>
+      </div>
+    </div>
+  </section>
+
+  <footer>🛡️ SentinelAI — คู่มือใช้งาน + สถานการณ์จริง · ป้องกันข้อมูลบริษัทรั่วสู่ AI</footer>
+</div>
+
+</body>
+</html>
