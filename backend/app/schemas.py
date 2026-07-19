@@ -190,6 +190,11 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class CheckoutRequest(BaseModel):
+    plan: str = "starter"
+    seats: int = Field(5, ge=1, le=1000)
+
+
 class OrgOut(BaseModel):
     id: int
     name: str

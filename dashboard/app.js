@@ -1743,6 +1743,43 @@ async function loadDevices() {
   } catch (e) { if (e.status === 401) return; box.innerHTML = `<div class="micro">โหลดรายการอุปกรณ์ไม่ได้</div>`; }
 }
 
+// ---- Billing (Stripe) ----
+async function loadBilling() {
+  const box = $("#bill-body"); if (!box) return;
+  let d;
+  try { d = await api.get("/billing/status"); }
+  catch (e) { if (e.status === 401) return; box.innerHTML = `<div class="micro">โหลดข้อมูลแพ็กเกจไม่ได้</div>`; return; }
+  const statusTH = { trial: "ทดลองใช้", active: "ใช้งาน (ชำระแล้ว)", suspended: "ถูกระงับ" }[d.status] || d.status || "—";
+  const vu = d.valid_until ? new Date(d.valid_until).toLocaleDateString("en-GB") : "—";
+  let html = `<div class="micro" style="margin-bottom:12px">แพ็กเกจ: <b>${esc(planTH(d.plan) || d.plan || "—")}</b> · สถานะ: <b>${esc(statusTH)}</b> · สิทธิ์ <b>${fmtNum(d.seats || 0)}</b> เครื่อง · หมดอายุ <b>${vu}</b></div>`;
+  if (!d.enabled) {
+    html += `<div class="pdpa-note" style="margin-bottom:0">💬 <div>ระบบชำระเงินอัตโนมัติยังไม่เปิด — <b>ติดต่อฝ่ายขาย</b>เพื่อเปิด/ต่ออายุ (หรือแอดมินเปิดสิทธิ์ให้แบบ manual)</div></div>`;
+    box.innerHTML = html; return;
+  }
+  if (d.has_subscription) {
+    html += `<button class="btn btn-primary" id="bill-portal">จัดการการชำระเงิน / ยกเลิก</button>`;
+  } else {
+    const opts = (d.plans || []).map((p) => `<option value="${esc(p.key)}">${esc(p.name)} · ตรวจ ${fmtNum(p.quota)}/เดือน</option>`).join("");
+    html += `<div class="grid grid-2" style="gap:12px;align-items:end">
+        <div class="field"><label>แพ็กเกจ</label><select id="bill-plan">${opts}</select></div>
+        <div class="field"><label>จำนวนเครื่อง (seat)</label><input type="number" id="bill-seats" min="1" value="5"></div>
+      </div>
+      <button class="btn btn-primary" id="bill-pay" style="margin-top:8px">💳 ชำระเงินด้วย Stripe</button>`;
+  }
+  box.innerHTML = html;
+  $("#bill-portal")?.addEventListener("click", async (e) => {
+    e.currentTarget.disabled = true;
+    try { const r = await api.post("/billing/portal", {}); location.href = r.url; }
+    catch (err) { toast("เปิดหน้าจัดการไม่ได้: " + err.message, "err"); e.currentTarget.disabled = false; }
+  });
+  $("#bill-pay")?.addEventListener("click", async (e) => {
+    const plan = $("#bill-plan").value, seats = Math.max(1, parseInt($("#bill-seats").value, 10) || 1);
+    const b = e.currentTarget; b.disabled = true; b.textContent = "กำลังไปหน้าชำระเงิน…";
+    try { const r = await api.post("/billing/checkout", { plan, seats }); location.href = r.url; }
+    catch (err) { toast("เริ่มชำระเงินไม่ได้: " + err.message, "err"); b.disabled = false; b.textContent = "💳 ชำระเงินด้วย Stripe"; }
+  });
+}
+
 async function renderSettings() {
   setView(pageHead("ตั้งค่า & เชื่อมต่อ", "คีย์ API ขององค์กร, สถานะการเชื่อมต่อ AI (BytePlus ModelArk) และเครื่องมือ") + `<div id="set-body">${loadingBlock()}</div>`);
   let cfg, health, org;
@@ -1772,6 +1809,12 @@ async function renderSettings() {
         <b>วิธีเชื่อมต่อ:</b> ใส่คีย์นี้ในช่อง <b>“Org Key”</b> ของ Browser Extension และตั้งตัวแปร
         <code>SENTINEL_ORG_KEY</code> ของ Endpoint Agent เพื่อให้เหตุการณ์เข้าองค์กรคุณ
       </div></div>
+    </div>
+
+    <!-- แพ็กเกจ / ชำระเงิน -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-head"><h2 class="card-title">💳 แพ็กเกจ &amp; การชำระเงิน</h2></div>
+      <div id="bill-body">${loadingBlock()}</div>
     </div>
 
     <!-- ดาวน์โหลดตัวติดตั้ง -->
@@ -1845,6 +1888,7 @@ async function renderSettings() {
 
   $("#btn-seed").addEventListener("click", (e) => seedDemo(e.currentTarget));
   loadDevices();
+  loadBilling();
   $("#btn-ping")?.addEventListener("click", async (e) => {
     const b = e.currentTarget, out = $("#ping-out"); b.disabled = true; const oo = b.innerHTML; b.innerHTML = '<span class="spinner"></span> กำลังทดสอบ…'; out.textContent = "";
     try {

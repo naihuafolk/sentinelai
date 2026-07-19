@@ -21,16 +21,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import __version__, audit, auth, db, service
+from . import __version__, audit, auth, billing, db, service
 from .byteplus import get_client
 from .classifier.fingerprint import get_index
 from .config import settings
 from .policy.db_bridge import invalidate as invalidate_policies
 from .schemas import (
     AuthResponse, ClassifyOnlyResponse, DeviceOut, EventPage, FingerprintOut, Health,
-    InspectRequest, InspectResponse, Label, LicenseUpdate, LoginRequest, OrgAdminOut, OrgOut,
-    Policy, PolicyCreate, ResponseScanRequest, ResponseScanResult, SignupRequest,
-    SimulateRequest, Stats, UserOut,
+    CheckoutRequest, InspectRequest, InspectResponse, Label, LicenseUpdate, LoginRequest,
+    OrgAdminOut, OrgOut, Policy, PolicyCreate, ResponseScanRequest, ResponseScanResult,
+    SignupRequest, SimulateRequest, Stats, UserOut,
 )
 from .seed import ensure_defaults, register_sample_fingerprints, seed_demo, seed_org_defaults
 
@@ -147,6 +147,55 @@ async def revoke_device(device_pk: int, ctx: dict = Depends(auth.get_current_use
     if not db.delete_device(ctx["org"]["id"], device_pk):
         raise HTTPException(404, "ไม่พบอุปกรณ์นี้")
     return {"ok": True}
+
+
+# ============================ Billing (Stripe) =======================
+@app.get(f"{API}/billing/status", tags=["billing"])
+async def billing_status(ctx: dict = Depends(auth.get_current_user)):
+    org = ctx["org"]
+    return {
+        "enabled": billing.enabled(),
+        "plans": billing.plans_public() if billing.enabled() else [],
+        "plan": org.get("plan"), "status": org.get("status"),
+        "seats": org.get("seats"), "valid_until": org.get("valid_until"),
+        "has_subscription": bool(org.get("stripe_subscription_id")),
+    }
+
+
+@app.post(f"{API}/billing/checkout", tags=["billing"])
+async def billing_checkout(req: CheckoutRequest, ctx: dict = Depends(auth.get_current_user)):
+    if not billing.enabled():
+        raise HTTPException(503, "ระบบจ่ายเงินอัตโนมัติยังไม่เปิด — ติดต่อฝ่ายขาย")
+    try:
+        url = billing.create_checkout(ctx["org"], req.plan, req.seats, ctx["user"].get("email", ""))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception:
+        logging.getLogger("sentinel.api").exception("checkout error")
+        raise HTTPException(502, "สร้างรายการชำระเงินไม่สำเร็จ")
+    return {"url": url}
+
+
+@app.post(f"{API}/billing/portal", tags=["billing"])
+async def billing_portal(ctx: dict = Depends(auth.get_current_user)):
+    if not billing.enabled():
+        raise HTTPException(503, "ระบบจ่ายเงินอัตโนมัติยังไม่เปิด")
+    try:
+        return {"url": billing.customer_portal(ctx["org"])}
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post(f"{API}/billing/webhook", tags=["billing"])
+async def billing_webhook(request: Request):
+    """รับ webhook จาก Stripe (ตรวจลายเซ็น) — ไม่ต้องล็อกอิน."""
+    payload = await request.body()
+    sig = request.headers.get("stripe-signature", "")
+    try:
+        return billing.handle_webhook(payload, sig)
+    except Exception as e:
+        logging.getLogger("sentinel.api").warning("stripe webhook rejected: %s", e)
+        raise HTTPException(400, "webhook verification failed")
 
 
 # ============================ Events / Audit (login) ==================

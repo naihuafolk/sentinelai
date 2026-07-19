@@ -42,6 +42,8 @@ CREATE TABLE IF NOT EXISTS orgs (
     status TEXT DEFAULT 'trial',          -- trial | active | suspended
     quota_month INTEGER DEFAULT 2000,     -- จำนวนการตรวจ AI ต่อเดือน
     valid_until TEXT,                      -- วันหมดอายุ license (ISO)
+    stripe_customer_id TEXT,              -- ลูกค้าใน Stripe (สำหรับจ่ายเงินอัตโนมัติ)
+    stripe_subscription_id TEXT,
     created_at TEXT
 );
 CREATE TABLE IF NOT EXISTS users (
@@ -109,7 +111,8 @@ def init_db() -> None:
                 pass
         # migration: เพิ่มคอลัมน์ license ให้ orgs เก่า
         for col, ddl in (("seats", "INTEGER DEFAULT 5"), ("status", "TEXT DEFAULT 'trial'"),
-                         ("quota_month", "INTEGER DEFAULT 2000"), ("valid_until", "TEXT")):
+                         ("quota_month", "INTEGER DEFAULT 2000"), ("valid_until", "TEXT"),
+                         ("stripe_customer_id", "TEXT"), ("stripe_subscription_id", "TEXT")):
             try:
                 if not _has_column(conn, "orgs", col):
                     conn.execute(f"ALTER TABLE orgs ADD COLUMN {col} {ddl}")
@@ -149,6 +152,28 @@ def get_org(org_id: int) -> Optional[dict]:
     with _lock:
         r = _connect().execute("SELECT * FROM orgs WHERE id=?", (org_id,)).fetchone()
     return dict(r) if r else None
+
+
+def get_org_by_stripe_customer(customer_id: str) -> Optional[dict]:
+    with _lock:
+        r = _connect().execute("SELECT * FROM orgs WHERE stripe_customer_id=?", (customer_id,)).fetchone()
+    return dict(r) if r else None
+
+
+def set_stripe_ids(org_id: int, *, customer_id: Optional[str] = None,
+                   subscription_id: Optional[str] = None) -> None:
+    sets, params = [], []
+    if customer_id is not None:
+        sets.append("stripe_customer_id=?"); params.append(customer_id)
+    if subscription_id is not None:
+        sets.append("stripe_subscription_id=?"); params.append(subscription_id)
+    if not sets:
+        return
+    params.append(org_id)
+    with _lock:
+        conn = _connect()
+        conn.execute(f"UPDATE orgs SET {', '.join(sets)} WHERE id=?", params)
+        conn.commit()
 
 
 def count_orgs() -> int:

@@ -63,6 +63,18 @@ class Settings:
     share_max_ips: int = _int("SENTINEL_SHARE_MAX_IPS", 3)      # >3 ไอพี (คือ 4+) = สงสัยแชร์
     share_window_min: int = _int("SENTINEL_SHARE_WINDOW_MIN", 20)  # หน้าต่างเวลา (นาที)
 
+    # Stripe billing (ไม่ตั้งคีย์ = ปิดจ่ายเงินอัตโนมัติ ใช้ manual ผ่าน Super Admin ต่อได้)
+    stripe_secret_key: str = os.getenv("STRIPE_SECRET_KEY", "").strip()
+    stripe_webhook_secret: str = os.getenv("STRIPE_WEBHOOK_SECRET", "").strip()
+    stripe_publishable_key: str = os.getenv("STRIPE_PUBLISHABLE_KEY", "").strip()
+    stripe_price_starter: str = os.getenv("STRIPE_PRICE_STARTER", "").strip()   # price id (per-seat/เดือน)
+    stripe_price_business: str = os.getenv("STRIPE_PRICE_BUSINESS", "").strip()
+    public_base_url: str = os.getenv("SENTINEL_PUBLIC_URL", "https://sentinelai.help").rstrip("/")
+
+    @property
+    def billing_enabled(self) -> bool:
+        return bool(self.stripe_secret_key)
+
     def admin_email_set(self) -> set:
         return {e.strip().lower() for e in self.admin_emails.split(",") if e.strip()}
     store_content: bool = _bool("SENTINEL_STORE_CONTENT", False)
@@ -88,6 +100,7 @@ class Settings:
             "default_mode": self.default_mode,
             "ai_risk_threshold": self.ai_risk_threshold,
             "store_content": self.store_content,
+            "billing_enabled": self.billing_enabled,
             "models": {
                 "reasoning": self.model_reasoning,
                 "fast": self.model_fast,
