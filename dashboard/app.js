@@ -323,6 +323,14 @@ function renderAuth(tab = "login") {
         </div>
       </section>
 
+      <!-- ===== DEMO ===== -->
+      <section class="lp-section lp-demo-sec">
+        <div class="lp-demo-frame">
+          <iframe class="lp-demo-iframe" src="/demo.html" title="SentinelAI Demo" loading="lazy" scrolling="no"></iframe>
+        </div>
+        <p class="lp-demo-cap">▶ ตัวอย่างการทำงานจริง — ป้องกันทั้งเบราว์เซอร์ · คอม · สกรีนช็อต</p>
+      </section>
+
       <!-- ===== FEATURES ===== -->
       <section class="lp-section">
         <div class="lp-sec-head">

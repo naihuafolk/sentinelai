@@ -1250,3 +1250,9 @@ input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border: none; b
   .lp-btn-lg { width: 100%; justify-content: center; }
   .lp-footer { justify-content: center; text-align: center; }
 }
+
+/* ===== Landing demo embed ===== */
+.lp-demo-sec{text-align:center}
+.lp-demo-frame{max-width:920px;margin:0 auto;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.lp-demo-iframe{display:block;width:100%;aspect-ratio:16/9;border:0}
+.lp-demo-cap{margin-top:14px;color:#93a3b0;font-size:14px}

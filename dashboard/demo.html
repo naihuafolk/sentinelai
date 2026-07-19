@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SentinelAI — Demo</title>
+<style>
+  :root{--em:#34d399;--cy:#22d3ee;--block:#fb5670;--warn:#f59e0b;--ink:#e9eef3;--dim:#8b97a4;
+    --font:"Segoe UI","Sarabun","IBM Plex Sans Thai",system-ui,"Noto Sans Thai",sans-serif;--mono:ui-monospace,Consolas,monospace;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{overflow:hidden;background:#05070b}
+  .stage{position:relative;width:100%;aspect-ratio:16/9;background:radial-gradient(circle at 30% 10%,#0d1a2b,#05070b 70%);overflow:hidden;container-type:inline-size;font-family:var(--font);color:var(--ink)}
+  .hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:3cqw;z-index:20;font-size:2.4cqw}
+  .hud .brand{font-weight:800;background:linear-gradient(120deg,#fff,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hud .rec{display:flex;align-items:center;gap:1.2cqw;color:var(--dim);font-family:var(--mono);font-size:2cqw}
+  .hud .rec i{width:1.6cqw;height:1.6cqw;border-radius:50%;background:var(--block);animation:blink 1.4s infinite}
+  @keyframes blink{50%{opacity:.25}}
+  .scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transform:scale(.985);transition:opacity .5s,transform .5s;padding:9cqw 7cqw 8cqw}
+  .scene.active{opacity:1;transform:scale(1)}
+  .cap{position:absolute;bottom:4.5cqw;left:0;right:0;text-align:center;font-size:2.5cqw;color:var(--dim);opacity:0;transition:opacity .5s .2s}
+  .scene.active .cap{opacity:1}
+  .pbar{position:absolute;bottom:0;left:0;height:.7cqw;background:linear-gradient(90deg,var(--em),var(--cy));width:0;z-index:20;border-radius:0 3px 3px 0}
+  .big{font-size:8cqw;font-weight:850;text-align:center;line-height:1.15;letter-spacing:-.02em}
+  .big b{background:linear-gradient(120deg,#fff,#7de4c0 55%,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .tag{font-size:3.2cqw;color:var(--ink);opacity:.8;margin-top:2.5cqw;text-align:center}
+  .shield{font-size:14cqw;filter:drop-shadow(0 0 8cqw rgba(52,211,153,.5));animation:pop .7s both}
+  @keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+  .scene.active .fade1{animation:up .6s .15s both}
+  .scene.active .fade2{animation:up .6s .4s both}
+  .scene.active .fade3{animation:up .6s .65s both}
+  @keyframes up{from{opacity:0;transform:translateY(3cqw)}to{opacity:1;transform:none}}
+  .cta{margin-top:3cqw;display:inline-block;background:var(--em);color:#04160e;font-weight:800;font-size:3cqw;padding:2cqw 5cqw;border-radius:2cqw}
+  .win{width:82cqw;border-radius:2cqw;overflow:hidden;box-shadow:0 4cqw 10cqw rgba(0,0,0,.5)}
+  .wbar{background:#dde3ea;display:flex;align-items:center;gap:1.6cqw;padding:1.6cqw 2cqw}
+  .dots{display:flex;gap:1cqw}.dots i{width:1.8cqw;height:1.8cqw;border-radius:50%}
+  .dots i:nth-child(1){background:#ff5f57}.dots i:nth-child(2){background:#febc2e}.dots i:nth-child(3){background:#28c840}
+  .addr{flex:1;background:#fff;border-radius:1.2cqw;padding:1cqw 2cqw;font-size:2.1cqw;color:#3a4756;font-family:var(--mono)}
+  .gpt{background:#212121;padding:3cqw}
+  .gtop{font-size:2cqw;color:#9a9a9a;margin-bottom:2cqw}
+  .ginput{background:#2f2f2f;border:.3cqw solid #444;border-radius:2cqw;padding:2.4cqw 3cqw;font-size:2.7cqw;color:#fff;min-height:9cqw;position:relative;transition:border-color .3s}
+  .type{display:inline-block;white-space:nowrap;overflow:hidden;width:0;vertical-align:bottom;max-width:100%}
+  .scene.active .type{animation:type 2.6s steps(46) .4s both}
+  @keyframes type{to{width:100%}}
+  .sec{background:rgba(251,86,112,.3);border-radius:.6cqw;padding:0 .8cqw}
+  .banner{position:absolute;left:0;right:0;top:calc(100% + 1.4cqw);border-radius:2cqw;padding:2.4cqw 3cqw;display:flex;gap:2cqw;align-items:flex-start;font-size:2.4cqw;opacity:0;transform:translateY(2cqw)}
+  .scene.active .banner{animation:pin .5s 3.3s both}
+  @keyframes pin{to{opacity:1;transform:none}}
+  .banner.block{background:rgba(251,86,112,.16);border:.3cqw solid rgba(251,86,112,.5);color:#ffc9d2}
+  .banner .bi{font-size:4cqw;line-height:1}
+  .banner b{color:#fff}
+  .scene.active .ginput.hit{animation:flag .4s 3.3s both}
+  @keyframes flag{to{border-color:var(--block)}}
+  .shotwrap{position:relative;width:60cqw}
+  .shot{background:#fff;border-radius:1.6cqw;padding:3cqw;color:#1a1a1a;font-family:var(--mono);font-size:2.5cqw;line-height:1.8;box-shadow:0 3cqw 8cqw rgba(0,0,0,.4)}
+  .scan{position:absolute;left:0;right:0;height:6cqw;background:linear-gradient(180deg,rgba(52,211,153,.5),transparent);border-top:.4cqw solid var(--em);opacity:0}
+  .scene.active .scan{animation:scan 1.6s .5s 1 both}
+  @keyframes scan{0%{top:0;opacity:1}90%{opacity:1}100%{top:100%;opacity:0}}
+  .pop{width:44cqw;margin-top:4cqw;background:#0f172a;border:.3cqw solid #24324a;border-radius:2cqw;overflow:hidden;opacity:0;transform:translateY(3cqw)}
+  .scene.active .pop{animation:pin .5s 2.2s both}
+  .pop .cbar{height:1cqw;background:var(--block)}
+  .pop .pbd{padding:2.6cqw 3cqw}
+  .pop .pb-brand{font-size:1.8cqw;letter-spacing:.1em;color:var(--em);font-weight:700}
+  .pop .pb-t{font-size:3cqw;font-weight:800;margin:1cqw 0;display:flex;gap:1.4cqw;align-items:center}
+  .pop .pb-m{font-size:2cqw;color:#94a3b8}
+  .dash{width:78cqw;background:#0b1119;border:.25cqw solid rgba(255,255,255,.1);border-radius:2cqw;overflow:hidden}
+  .dash .dh{padding:2.2cqw 3cqw;font-size:2.3cqw;color:var(--dim);border-bottom:.25cqw solid rgba(255,255,255,.08);font-weight:700}
+  .drow{display:flex;justify-content:space-between;align-items:center;padding:2.2cqw 3cqw;font-size:2.4cqw;border-bottom:.2cqw solid rgba(255,255,255,.05);opacity:0}
+  .scene.active .drow{animation:up .5s both}
+  .scene.active .drow:nth-child(2){animation-delay:.3s}
+  .scene.active .drow:nth-child(3){animation-delay:.6s}
+  .scene.active .drow:nth-child(4){animation-delay:.9s}
+  .pill{border-radius:1cqw;padding:.6cqw 2cqw;font-size:2cqw;font-weight:800}
+  .pill.block{background:rgba(251,86,112,.16);color:var(--block)}
+  .pill.warn{background:rgba(245,158,11,.16);color:var(--warn)}
+  @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important}}
+</style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="hud"><span class="brand">🛡️ SentinelAI</span><span class="rec"><i></i>DEMO</span></div>
+
+    <div class="scene" id="sc-intro">
+      <div class="shield">🛡️</div>
+      <div class="big fade1">กันข้อมูลบริษัท<br><b>รั่วสู่ AI</b></div>
+      <div class="tag fade2">ChatGPT · Gemini · Claude · Copilot</div>
+    </div>
+
+    <div class="scene" id="sc-chrome">
+      <div class="win">
+        <div class="wbar"><span class="dots"><i></i><i></i><i></i></span><span class="addr">🔒 chatgpt.com</span></div>
+        <div class="gpt">
+          <div class="gtop">ChatGPT 4o · แผนกการเงิน</div>
+          <div class="ginput hit"><span class="type">ช่วยเขียนอีเมลทวงหนี้ ลูกค้าบัตร <span class="sec">4111 1111 1111 1111</span></span>
+            <div class="banner block"><span class="bi">⛔</span><div><b>บล็อก: พบเลขบัตรเครดิต</b><br>ข้อมูลถูกหยุดไว้ ไม่ส่งออกไปยัง ChatGPT</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="cap">🌐 ฝั่ง Chrome — ดักก่อนกดส่ง</div>
+    </div>
+
+    <div class="scene" id="sc-shot">
+      <div class="shotwrap">
+        <div class="shot">ACME Corp — Customer Record<br>Credit Card: 4111 1111 1111 1111<br>Expiry 12/26 · CVV 123</div>
+        <div class="scan"></div>
+      </div>
+      <div class="pop">
+        <div class="cbar"></div>
+        <div class="pbd"><div class="pb-brand">🛡️ SCREENSHOT GUARD</div>
+          <div class="pb-t">⛔ บล็อก: พบข้อมูลลับในรูป</div>
+          <div class="pb-m">AI Vision อ่านรูป → บัตรเครดิต + CVV · ความเสี่ยง 72/100</div></div>
+      </div>
+      <div class="cap">💻 ฝั่งคอม — แคปหน้าจอก็ไม่รอด (AI อ่านรูปได้)</div>
+    </div>
+
+    <div class="scene" id="sc-dash">
+      <div class="dash">
+        <div class="dh">📊 เหตุการณ์ล่าสุด — องค์กร IMAI</div>
+        <div class="drow"><span>🌐 somchai · ChatGPT · บัตรเครดิต</span><span class="pill block">block</span></div>
+        <div class="drow"><span>💻 nid · คลิปบอร์ด · บัตรประชาชน</span><span class="pill block">block</span></div>
+        <div class="drow"><span>🌐 arm · Gemini · กลยุทธ์ธุรกิจ</span><span class="pill warn">warn</span></div>
+      </div>
+      <div class="cap">📊 ทุกเหตุการณ์เข้า Dashboard อัตโนมัติ</div>
+    </div>
+
+    <div class="scene" id="sc-outro">
+      <div class="big fade1"><b>ป้องกันครบ</b><br>เบราว์เซอร์ + คอม + สกรีนช็อต</div>
+      <div class="tag fade2">1 เครื่อง = 1 สิทธิ์ · ไม่เก็บเนื้อหาดิบ (PDPA)</div>
+      <div class="cta fade3">เริ่มที่ sentinelai.help</div>
+    </div>
+
+    <div class="pbar" id="bar"></div>
+  </div>
+
+<script>
+  const scenes=[["intro",3600],["chrome",7200],["shot",6400],["dash",5000],["outro",3800]];
+  const bar=document.getElementById("bar");
+  let timer=null;
+  function show(i){
+    document.querySelectorAll(".scene").forEach(s=>s.classList.remove("active"));
+    const [id,ms]=scenes[i];
+    const el=document.getElementById("sc-"+id);
+    void el.offsetWidth; el.classList.add("active");
+    bar.style.transition="none"; bar.style.width="0%"; void bar.offsetWidth;
+    bar.style.transition="width "+ms+"ms linear"; bar.style.width="100%";
+    clearTimeout(timer);
+    timer=setTimeout(()=>show((i+1)%scenes.length), ms);
+  }
+  show(0);
+</script>
+</body>
+</html>
