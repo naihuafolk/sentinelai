@@ -27,8 +27,8 @@ for /f "delims=" %%v in ('python --version') do echo [1/4] พบ %%v
 echo.
 
 REM --- 2) ไลบรารีที่ต้องใช้ ---
-echo [2/4] กำลังเตรียมไลบรารี (httpx)...
-python -m pip install --quiet --disable-pip-version-check --upgrade httpx
+echo [2/4] กำลังเตรียมไลบรารี (httpx + pillow สำหรับกันสกรีนช็อต)...
+python -m pip install --quiet --disable-pip-version-check --upgrade httpx pillow
 if errorlevel 1 (
   echo [X] เตรียมไลบรารีไม่สำเร็จ - เช็คอินเทอร์เน็ตแล้วลองใหม่
   pause

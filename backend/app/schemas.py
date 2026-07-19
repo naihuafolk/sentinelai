@@ -30,7 +30,7 @@ Channel = Literal[
     "chatgpt", "gemini", "claude", "copilot", "deepseek", "grok",
     "perplexity", "desktop", "file", "other",
 ]
-ActionType = Literal["paste", "type", "submit", "upload", "attach", "copy", "scan"]
+ActionType = Literal["paste", "type", "submit", "upload", "attach", "copy", "scan", "screenshot"]
 
 
 # ---- Detections & Classification ---------------------------------------
