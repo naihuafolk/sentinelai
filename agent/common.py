@@ -25,18 +25,19 @@ if str(_BACKEND) not in sys.path:
 
 
 def _load_env() -> None:
-    """โหลด backend/.env แบบเบา ๆ (ไม่ override ค่าที่ตั้งไว้แล้ว)."""
-    envp = _BACKEND / ".env"
-    if not envp.exists():
-        return
-    for line in envp.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
+    """โหลดค่าตั้งค่าแบบเบา ๆ (ไม่ override ค่าที่ตั้งใน env จริง).
+    ลำดับ: sentinel.env ข้าง ๆ agent (สำหรับลูกค้า/standalone) ก่อน แล้วค่อย backend/.env (dev)."""
+    for envp in (Path(__file__).resolve().parent / "sentinel.env", _BACKEND / ".env"):
+        if not envp.exists():
             continue
-        k, _, v = line.partition("=")
-        k, v = k.strip(), v.strip().strip('"').strip("'")
-        if k and k not in os.environ:
-            os.environ[k] = v
+        for line in envp.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, _, v = line.partition("=")
+            k, v = k.strip(), v.strip().strip('"').strip("'")
+            if k and k not in os.environ:
+                os.environ[k] = v
 
 
 _load_env()
@@ -85,7 +86,7 @@ def hardware_fingerprint() -> str:
 
 
 class AgentConfig:
-    backend_url: str = os.getenv("SENTINEL_BACKEND_URL", "http://127.0.0.1:8000").rstrip("/")
+    backend_url: str = os.getenv("SENTINEL_BACKEND_URL", "https://sentinelai.help").rstrip("/")
     user: str = os.getenv("SENTINEL_USER", os.getenv("USERNAME", "unknown"))
     department: str = os.getenv("SENTINEL_DEPARTMENT", "")
     device: str = os.getenv("SENTINEL_DEVICE", socket.gethostname())

@@ -132,6 +132,23 @@ async def classify(req: SimulateRequest, ctx: dict = Depends(auth.get_current_us
     return await service.classify_only(req.text, use_ai=req.use_ai, org_id=ctx["org"]["id"])
 
 
+# ============================ Devices (จัดการเครื่อง/สิทธิ์) ============
+@app.get(f"{API}/devices", tags=["events"])
+async def get_devices(ctx: dict = Depends(auth.get_current_user)):
+    """รายการอุปกรณ์ที่ใช้สิทธิ์ขององค์กร (เห็นสถานะแชร์คีย์ + จำนวน seat)."""
+    org = ctx["org"]
+    return {"devices": db.list_devices(org["id"]), "seats": org.get("seats"),
+            "used": db.count_devices(org["id"])}
+
+
+@app.post(f"{API}/devices/{{device_pk}}/revoke", tags=["events"])
+async def revoke_device(device_pk: int, ctx: dict = Depends(auth.get_current_user)):
+    """ถอดอุปกรณ์ (คืน seat) — เครื่องนั้นต้องลงทะเบียนใหม่ถึงจะใช้ได้อีก."""
+    if not db.delete_device(ctx["org"]["id"], device_pk):
+        raise HTTPException(404, "ไม่พบอุปกรณ์นี้")
+    return {"ok": True}
+
+
 # ============================ Events / Audit (login) ==================
 @app.get(f"{API}/events", response_model=EventPage, tags=["audit"])
 async def list_events(page: int = Query(1, ge=1), page_size: int = Query(25, ge=1, le=200),

@@ -2,6 +2,8 @@
 backend/.env
 backend/.jwt_secret
 .jwt_secret
+agent/sentinel.env
+sentinel.env
 
 # Database
 backend/*.db

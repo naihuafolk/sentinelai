@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ข้อกำหนดการใช้บริการ — SentinelAI</title>
+<meta name="description" content="ข้อกำหนดการใช้บริการ (Terms of Service) ของ SentinelAI ระบบป้องกันข้อมูลลับองค์กรรั่วไหลสู่ AI สาธารณะ" />
+<meta name="robots" content="index, follow" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%A1%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+<style>
+  :root{
+    --bg:#f4f6fb;
+    --panel:#ffffff;
+    --ink:#1b2436;
+    --ink-soft:#4a5568;
+    --muted:#6b7688;
+    --line:#e3e8f0;
+    --brand:#2563eb;
+    --brand-ink:#1e40af;
+    --accent:#0ea5e9;
+    --warn-bg:#fff7ed;
+    --warn-line:#fdba74;
+    --warn-ink:#9a3412;
+    --radius:14px;
+    --maxw:760px;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Sarabun","Noto Sans Thai","Leelawadee UI","Tahoma","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    font-size:17px;
+    line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== Header ===== */
+  .site-header{
+    background:linear-gradient(180deg,#ffffff 0%, #f7f9fe 100%);
+    border-bottom:1px solid var(--line);
+    position:sticky;
+    top:0;
+    z-index:10;
+    backdrop-filter:saturate(120%) blur(2px);
+  }
+  .site-header-inner{
+    max-width:var(--maxw);
+    margin:0 auto;
+    padding:14px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    text-decoration:none;
+    color:var(--ink);
+    font-weight:800;
+    font-size:20px;
+    letter-spacing:.2px;
+  }
+  .brand .logo{font-size:22px;line-height:1;}
+  .brand .ai{color:var(--brand);}
+  .back-link{
+    text-decoration:none;
+    color:var(--brand);
+    font-weight:600;
+    font-size:15px;
+    padding:7px 14px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:#fff;
+    transition:background .15s ease,border-color .15s ease;
+    white-space:nowrap;
+  }
+  .back-link:hover{background:#eef3ff;border-color:#c7d6ff;}
+
+  /* ===== Layout ===== */
+  main{
+    max-width:var(--maxw);
+    margin:0 auto;
+    padding:32px 20px 8px;
+  }
+  .doc-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:38px 40px;
+    box-shadow:0 1px 2px rgba(16,24,40,.04),0 10px 30px rgba(16,24,40,.05);
+  }
+  h1{
+    font-size:30px;
+    line-height:1.3;
+    margin:0 0 6px;
+    font-weight:800;
+    color:var(--ink);
+  }
+  .subtitle{
+    color:var(--muted);
+    margin:0 0 18px;
+    font-size:16px;
+  }
+  .effective{
+    display:inline-block;
+    background:#eef3ff;
+    color:var(--brand-ink);
+    border:1px solid #d5e0ff;
+    border-radius:999px;
+    padding:6px 14px;
+    font-size:14px;
+    font-weight:700;
+    margin-bottom:20px;
+  }
+  .disclaimer{
+    background:var(--warn-bg);
+    border:1px solid var(--warn-line);
+    color:var(--warn-ink);
+    border-radius:12px;
+    padding:14px 18px;
+    font-size:15px;
+    line-height:1.6;
+    margin:0 0 30px;
+  }
+  .disclaimer strong{font-weight:800;}
+
+  h2{
+    font-size:20px;
+    margin:34px 0 10px;
+    padding-top:8px;
+    font-weight:800;
+    color:var(--brand-ink);
+    scroll-margin-top:80px;
+  }
+  h2 .num{
+    color:var(--brand);
+    font-variant-numeric:tabular-nums;
+    margin-right:8px;
+  }
+  h3{
+    font-size:17px;
+    margin:20px 0 6px;
+    font-weight:700;
+    color:var(--ink);
+  }
+  p{margin:0 0 12px;color:var(--ink-soft);}
+  ul,ol{margin:0 0 14px;padding-left:24px;color:var(--ink-soft);}
+  li{margin:5px 0;}
+  strong{color:var(--ink);}
+  code,.kbd{
+    background:#eef1f7;
+    border:1px solid #dde3ee;
+    border-radius:6px;
+    padding:1px 6px;
+    font-family:"Cascadia Code",ui-monospace,"Consolas","Courier New",monospace;
+    font-size:14px;
+    color:#334155;
+  }
+  a{color:var(--brand);}
+  hr{border:none;border-top:1px solid var(--line);margin:30px 0;}
+
+  .toc{
+    background:#f8faff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px 20px 16px 20px;
+    margin:0 0 30px;
+  }
+  .toc h2{margin:0 0 8px;font-size:16px;color:var(--ink);padding-top:0;}
+  .toc ol{margin:0;padding-left:22px;font-size:15px;}
+  .toc a{text-decoration:none;color:var(--ink-soft);}
+  .toc a:hover{color:var(--brand);text-decoration:underline;}
+
+  .callout{
+    background:#f1f8ff;
+    border-left:4px solid var(--accent);
+    border-radius:8px;
+    padding:12px 16px;
+    margin:14px 0;
+    font-size:15.5px;
+    color:var(--ink-soft);
+  }
+
+  /* ===== Footer ===== */
+  footer{
+    max-width:var(--maxw);
+    margin:0 auto;
+    padding:26px 20px 46px;
+    color:var(--muted);
+    font-size:14px;
+    text-align:center;
+    line-height:1.7;
+  }
+  footer a{color:var(--brand);text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+  .foot-sep{color:var(--line);margin:0 8px;}
+
+  @media (max-width:600px){
+    body{font-size:16px;}
+    .doc-card{padding:24px 20px;}
+    h1{font-size:25px;}
+    h2{font-size:18px;}
+    main{padding:20px 14px 4px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="กลับสู่หน้าหลัก SentinelAI">
+      <span class="logo" aria-hidden="true">🛡️</span>
+      <span>Sentinel<span class="ai">AI</span></span>
+    </a>
+    <a class="back-link" href="/">← กลับหน้าหลัก</a>
+  </div>
+</header>
+
+<main>
+  <article class="doc-card">
+    <h1>ข้อกำหนดการใช้บริการ</h1>
+    <p class="subtitle">Terms of Service — บริการ SentinelAI</p>
+    <div class="effective">มีผลบังคับใช้: 19 กรกฎาคม 2569</div>
+
+    <div class="disclaimer" role="note">
+      <strong>ข้อควรทราบ:</strong> เอกสารนี้เป็น <strong>แม่แบบ (template)</strong> สำหรับใช้เป็นแนวทางเบื้องต้นเท่านั้น
+      ไม่ถือเป็นคำแนะนำทางกฎหมาย ก่อนนำไปใช้งานจริง (production) ผู้ประกอบการควรให้
+      <strong>ทนายความหรือที่ปรึกษากฎหมาย</strong> ตรวจทานและปรับแก้ให้สอดคล้องกับธุรกิจและกฎหมายที่บังคับใช้จริง
+    </div>
+
+    <nav class="toc" aria-label="สารบัญ">
+      <h2>สารบัญ</h2>
+      <ol>
+        <li><a href="#s1">บทนำและการยอมรับข้อกำหนด</a></li>
+        <li><a href="#s2">คำนิยาม</a></li>
+        <li><a href="#s3">บัญชีและการสมัครใช้งาน</a></li>
+        <li><a href="#s4">การทดลองใช้ฟรี 14 วัน</a></li>
+        <li><a href="#s5">การชำระเงินและแพ็กเกจ</a></li>
+        <li><a href="#s6">สิทธิ์การใช้งาน (Seat / ต่อเครื่อง)</a></li>
+        <li><a href="#s7">ข้อจำกัดการใช้งานและพฤติกรรมต้องห้าม</a></li>
+        <li><a href="#s8">ข้อจำกัดความรับผิดและการรับประกัน</a></li>
+        <li><a href="#s9">ทรัพย์สินทางปัญญา</a></li>
+        <li><a href="#s10">ข้อมูลส่วนบุคคลและความเป็นส่วนตัว</a></li>
+        <li><a href="#s11">การระงับและการยกเลิกบริการ</a></li>
+        <li><a href="#s12">การเปลี่ยนแปลงข้อกำหนด</a></li>
+        <li><a href="#s13">กฎหมายที่ใช้บังคับ</a></li>
+        <li><a href="#s14">ช่องทางการติดต่อ</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="s1"><span class="num">1.</span>บทนำและการยอมรับข้อกำหนด</h2>
+    <p>
+      ข้อกำหนดการใช้บริการฉบับนี้ (“<strong>ข้อกำหนด</strong>”) เป็นข้อตกลงระหว่างท่าน ในฐานะองค์กรผู้ใช้บริการ
+      (“<strong>ลูกค้า</strong>” หรือ “<strong>ท่าน</strong>”) กับผู้ให้บริการ SentinelAI (“<strong>SentinelAI</strong>”,
+      “<strong>เรา</strong>”) ในการเข้าถึงและใช้งานบริการ SentinelAI ผ่านเว็บไซต์
+      <a href="https://sentinelai.help">https://sentinelai.help</a> รวมถึงซอฟต์แวร์ ส่วนขยาย (agent/extension) และบริการที่เกี่ยวข้อง
+    </p>
+    <p>
+      SentinelAI เป็นระบบป้องกันข้อมูลลับรั่วไหล (AI Data Loss Prevention — AI-DLP) ที่ช่วยลดความเสี่ยงในการที่
+      ข้อมูลลับขององค์กรจะถูกส่งเข้าสู่เครื่องมือ AI สาธารณะ เช่น ChatGPT, Gemini, Claude และ Copilot
+    </p>
+    <p>
+      การสร้างบัญชี การเข้าสู่ระบบ หรือการใช้บริการไม่ว่าส่วนใดส่วนหนึ่ง ถือว่าท่านได้อ่าน เข้าใจ และ
+      <strong>ยอมรับที่จะผูกพัน</strong>ตามข้อกำหนดนี้ รวมถึง <a href="/privacy.html">นโยบายความเป็นส่วนตัว</a> ที่ถือเป็นส่วนหนึ่งของข้อกำหนดนี้
+      หากท่านไม่ยอมรับ โปรดหยุดใช้บริการ ผู้ที่ยอมรับข้อกำหนดในนามองค์กรรับรองว่าตนมีอำนาจผูกพันองค์กรนั้น
+    </p>
+
+    <h2 id="s2"><span class="num">2.</span>คำนิยาม</h2>
+    <ul>
+      <li><strong>บริการ (Service):</strong> แพลตฟอร์ม SentinelAI ทั้งหมด รวมถึงคอนโซลบริหารจัดการ (dashboard), agent/ส่วนขยายที่ติดตั้งบนอุปกรณ์, API และเอกสารประกอบ</li>
+      <li><strong>องค์กร / ลูกค้า (Organization / Customer):</strong> นิติบุคคลหรือบุคคลที่สมัครและชำระค่าบริการ และเป็นผู้กำหนดนโยบายการใช้งานภายในองค์กรของตน</li>
+      <li><strong>ผู้ใช้ (User):</strong> พนักงานหรือบุคคลที่องค์กรอนุญาตให้ใช้งานบริการภายใต้บัญชีขององค์กร</li>
+      <li><strong>Org Key:</strong> รหัสประจำองค์กรที่ใช้เชื่อมต่อ agent บนอุปกรณ์เข้ากับบัญชีองค์กรของท่าน ถือเป็นข้อมูลลับที่ต้องเก็บรักษา</li>
+      <li><strong>สิทธิ์ต่อเครื่อง (Seat):</strong> สิทธิ์การใช้งานหนึ่งหน่วย ซึ่งอนุญาตให้ติดตั้งและใช้งาน agent ได้ <strong>1 เครื่อง (device) ต่อ 1 สิทธิ์</strong></li>
+      <li><strong>เหตุการณ์ (Event):</strong> บันทึกการตรวจพบและการตัดสินของระบบเมื่อผู้ใช้พยายามส่งข้อความ/ไฟล์ไปยังเครื่องมือ AI</li>
+      <li><strong>เนื้อหา (Content):</strong> ข้อความ ไฟล์ หรือข้อมูลที่ผู้ใช้พิมพ์หรือส่งผ่านช่องทางที่ระบบตรวจสอบ</li>
+    </ul>
+
+    <h2 id="s3"><span class="num">3.</span>บัญชีและการสมัครใช้งาน</h2>
+    <p>
+      ท่านต้องลงทะเบียนด้วยข้อมูลที่ถูกต้อง ครบถ้วน และเป็นปัจจุบัน อย่างน้อยได้แก่อีเมลและชื่อองค์กร
+      ท่านมีหน้าที่รักษาความลับของข้อมูลเข้าสู่ระบบ (รหัสผ่าน และ Org Key) และรับผิดชอบต่อกิจกรรมทั้งหมด
+      ที่เกิดขึ้นภายใต้บัญชีของท่าน
+    </p>
+    <ul>
+      <li>ท่านต้องแจ้งเราทันทีหากพบการเข้าถึงบัญชีโดยไม่ได้รับอนุญาต หรือสงสัยว่า Org Key รั่วไหล</li>
+      <li>ผู้สมัครต้องมีอายุและสถานะทางกฎหมายเพียงพอที่จะทำสัญญาผูกพันในนามองค์กร</li>
+      <li>บัญชีหนึ่งใช้สำหรับหนึ่งองค์กร ห้ามโอนบัญชีให้ผู้อื่นโดยไม่ได้รับความยินยอมเป็นลายลักษณ์อักษรจากเรา</li>
+    </ul>
+
+    <h2 id="s4"><span class="num">4.</span>การทดลองใช้ฟรี 14 วัน</h2>
+    <p>
+      เราอาจเสนอ <strong>ระยะทดลองใช้งานฟรีเป็นเวลา 14 วัน</strong> เพื่อให้ท่านประเมินบริการ โดยมีเงื่อนไขดังนี้
+    </p>
+    <ul>
+      <li>ระยะทดลองใช้เริ่มนับตั้งแต่วันที่เปิดใช้งานบัญชีองค์กร</li>
+      <li>เมื่อสิ้นสุดระยะทดลองใช้ หากท่านไม่เลือกแพ็กเกจแบบชำระเงิน บริการบางส่วนหรือทั้งหมดอาจถูกจำกัดหรือระงับ</li>
+      <li>เราขอสงวนสิทธิ์ในการปรับเงื่อนไข ระยะเวลา หรือยกเลิกข้อเสนอทดลองใช้ได้ตามดุลพินิจ</li>
+      <li>ระยะทดลองใช้มีไว้เพื่อการประเมินการใช้งานตามปกติเท่านั้น ไม่ใช่เพื่อการใช้งานเชิงพาณิชย์เต็มรูปแบบ</li>
+    </ul>
+
+    <h2 id="s5"><span class="num">5.</span>การชำระเงินและแพ็กเกจ</h2>
+    <p>
+      บริการคิดค่าใช้จ่ายในลักษณะ <strong>รายเครื่องต่อเดือน (per-device per month)</strong> ตามจำนวนสิทธิ์ (seats) ที่ท่านซื้อ
+      ราคาที่แสดง ณ เว็บไซต์เป็นราคาที่ใช้บังคับ (อาจไม่รวมภาษีมูลค่าเพิ่มหรือภาษีอื่นที่กฎหมายกำหนด เว้นแต่ระบุไว้เป็นอย่างอื่น)
+    </p>
+    <h3>5.1 การเรียกเก็บและการต่ออายุ</h3>
+    <ul>
+      <li>ค่าบริการเรียกเก็บล่วงหน้าเป็นรายรอบ (รายเดือน) ตามจำนวนสิทธิ์ที่ใช้งานอยู่</li>
+      <li>การสมัครสมาชิกจะ <strong>ต่ออายุอัตโนมัติ</strong> ในรอบถัดไป เว้นแต่ท่านจะยกเลิกก่อนสิ้นสุดรอบปัจจุบัน</li>
+      <li>หากท่านเพิ่มจำนวนสิทธิ์ระหว่างรอบ อาจมีการคิดค่าบริการตามสัดส่วน (pro-rata) ของรอบนั้น</li>
+      <li>การชำระเงินล่าช้าหรือไม่สำเร็จอาจส่งผลให้บริการถูกจำกัดหรือระงับจนกว่าจะชำระครบถ้วน</li>
+    </ul>
+    <h3>5.2 การคืนเงิน</h3>
+    <p>
+      โดยหลักการ ค่าบริการที่ชำระแล้วสำหรับรอบที่ใช้งานไปแล้ว <strong>ไม่สามารถขอคืนได้</strong>
+      เว้นแต่กรณีที่กฎหมายกำหนด หรือเป็นไปตามนโยบายคืนเงินเฉพาะที่เราประกาศไว้เป็นลายลักษณ์อักษร
+      การยกเลิกจะมีผลเมื่อสิ้นสุดรอบการเรียกเก็บที่ชำระไว้แล้ว โดยท่านยังใช้งานได้จนสิ้นรอบนั้น
+    </p>
+
+    <h2 id="s6"><span class="num">6.</span>สิทธิ์การใช้งาน (Seat / ต่อเครื่อง)</h2>
+    <p>
+      เราให้สิทธิ์การใช้งานแบบ <strong>ไม่ผูกขาด โอนสิทธิ์ไม่ได้ และเพิกถอนได้</strong> เพื่อใช้บริการภายในองค์กรของท่าน
+      ตามจำนวนสิทธิ์ที่ชำระค่าบริการ ภายใต้เงื่อนไขสำคัญดังนี้
+    </p>
+    <ul>
+      <li><strong>1 สิทธิ์ = 1 เครื่อง (device):</strong> แต่ละสิทธิ์อนุญาตให้ใช้งาน agent ได้บนอุปกรณ์เดียว</li>
+      <li><strong>ห้ามแชร์ Org Key เกินจำนวนสิทธิ์ที่ซื้อ:</strong> การนำ Org Key ไปติดตั้งบนอุปกรณ์มากกว่าจำนวนสิทธิ์ที่ชำระ ถือเป็นการละเมิดข้อกำหนด</li>
+      <li>เพื่อบังคับสิทธิ์นี้ ระบบอาจใช้ลายนิ้วมืออุปกรณ์ (device fingerprint) และหมายเลข IP เพื่อระบุจำนวนอุปกรณ์ที่ใช้งานจริง (ดูรายละเอียดใน <a href="/privacy.html">นโยบายความเป็นส่วนตัว</a>)</li>
+    </ul>
+    <div class="callout">
+      <strong>ผลของการละเมิด:</strong> หากตรวจพบการใช้งานเกินจำนวนสิทธิ์ หรือการแชร์ Org Key เกินขอบเขต
+      เราขอสงวนสิทธิ์ในการ <strong>ระงับ (suspend) หรือบล็อก</strong> อุปกรณ์/บัญชีที่เกี่ยวข้อง และ/หรือเรียกเก็บค่าบริการเพิ่มเติม
+      ตามจำนวนอุปกรณ์ที่ใช้งานจริง
+    </div>
+
+    <h2 id="s7"><span class="num">7.</span>ข้อจำกัดการใช้งานและพฤติกรรมต้องห้าม</h2>
+    <p>ท่านและผู้ใช้ของท่านตกลงว่าจะไม่กระทำการดังต่อไปนี้</p>
+    <ul>
+      <li>ทำวิศวกรรมย้อนกลับ ถอดรหัส คัดลอก หรือพยายามเข้าถึงซอร์สโค้ดของบริการโดยไม่ได้รับอนุญาต</li>
+      <li>ใช้บริการเพื่อวัตถุประสงค์ที่ผิดกฎหมาย หรือละเมิดสิทธิของบุคคลอื่น</li>
+      <li>พยายามหลบเลี่ยง รบกวน หรือทำให้มาตรการรักษาความปลอดภัยหรือการจำกัดสิทธิ์ของระบบเสียหาย</li>
+      <li>แชร์หรือจำหน่ายต่อซึ่งสิทธิ์การใช้งาน หรือ Org Key เกินขอบเขตที่ได้รับอนุญาต</li>
+      <li>ใช้บริการในลักษณะที่สร้างภาระเกินสมควรต่อโครงสร้างพื้นฐานของเรา</li>
+    </ul>
+
+    <h2 id="s8"><span class="num">8.</span>ข้อจำกัดความรับผิดและการรับประกัน</h2>
+    <p>
+      บริการนี้ให้ <strong>“ตามสภาพที่เป็นอยู่” (as is)</strong> และ <strong>“ตามที่มีให้ใช้ได้” (as available)</strong>
+      เท่าที่กฎหมายอนุญาต เราไม่รับประกันโดยชัดแจ้งหรือโดยปริยายว่าบริการจะปราศจากข้อผิดพลาด ทำงานต่อเนื่องไม่หยุด
+      หรือเหมาะสมกับวัตถุประสงค์เฉพาะใด ๆ
+    </p>
+    <div class="callout">
+      SentinelAI เป็น <strong>เครื่องมือช่วยลดความเสี่ยง (risk-reduction tool)</strong> ในการป้องกันข้อมูลลับรั่วไหลสู่ AI สาธารณะ
+      <strong>ไม่ใช่การรับประกันความปลอดภัยแบบ 100%</strong> ระบบอาจไม่สามารถตรวจจับหรือยับยั้งการรั่วไหลได้ในทุกกรณี
+      (เช่น ช่องทางที่ไม่ครอบคลุม, การถ่ายภาพหน้าจอ, การพิมพ์ซ้ำด้วยมือ ฯลฯ)
+    </div>
+    <ul>
+      <li><strong>ลูกค้ายังคงเป็นผู้รับผิดชอบข้อมูลของตน</strong> รวมถึงการกำหนดนโยบายภายใน การอบรมพนักงาน และการปฏิบัติตามกฎหมายที่เกี่ยวข้อง</li>
+      <li>เท่าที่กฎหมายอนุญาต เราไม่รับผิดต่อความเสียหายทางอ้อม ความเสียหายพิเศษ ผลสืบเนื่อง การสูญเสียกำไร ข้อมูล หรือชื่อเสียง</li>
+      <li>ความรับผิดรวมสูงสุดของเราต่อความเสียหายใด ๆ จะไม่เกินจำนวนค่าบริการที่ท่านชำระจริงให้แก่เราในช่วง <strong>12 เดือน</strong> ก่อนเกิดเหตุ</li>
+    </ul>
+
+    <h2 id="s9"><span class="num">9.</span>ทรัพย์สินทางปัญญา</h2>
+    <p>
+      บริการ ซอฟต์แวร์ โลโก้ เครื่องหมายการค้า การออกแบบ และเนื้อหาทั้งหมดของ SentinelAI เป็นทรัพย์สินของเราหรือผู้ให้สิทธิ์ของเรา
+      และได้รับความคุ้มครองตามกฎหมายทรัพย์สินทางปัญญา ข้อกำหนดนี้ไม่ได้โอนกรรมสิทธิ์ใด ๆ ให้แก่ท่าน นอกจากสิทธิ์การใช้งานที่ระบุไว้
+    </p>
+    <p>
+      <strong>ข้อมูลขององค์กร (Customer Data)</strong> ยังคงเป็นของท่าน เราใช้ข้อมูลดังกล่าวเพียงเพื่อให้บริการตามข้อกำหนดและ
+      <a href="/privacy.html">นโยบายความเป็นส่วนตัว</a> เท่านั้น
+    </p>
+
+    <h2 id="s10"><span class="num">10.</span>ข้อมูลส่วนบุคคลและความเป็นส่วนตัว</h2>
+    <p>
+      การเก็บ ใช้ และประมวลผลข้อมูลส่วนบุคคลเป็นไปตาม <a href="/privacy.html">นโยบายความเป็นส่วนตัว</a> ของเรา ซึ่งจัดทำโดยคำนึงถึง
+      พระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA) ในความสัมพันธ์นี้ โดยทั่วไป
+      <strong>ลูกค้าองค์กรเป็นผู้ควบคุมข้อมูล (Data Controller)</strong> และ <strong>SentinelAI เป็นผู้ประมวลผลข้อมูล (Data Processor)</strong>
+    </p>
+
+    <h2 id="s11"><span class="num">11.</span>การระงับและการยกเลิกบริการ</h2>
+    <ul>
+      <li>ท่านสามารถยกเลิกการสมัครสมาชิกได้ทุกเมื่อ โดยการยกเลิกจะมีผลเมื่อสิ้นสุดรอบการเรียกเก็บที่ชำระไว้แล้ว</li>
+      <li>เราอาจระงับหรือยกเลิกบริการทั้งหมดหรือบางส่วน หากท่านละเมิดข้อกำหนด ค้างชำระค่าบริการ หรือใช้งานในลักษณะที่ก่อความเสี่ยงด้านความปลอดภัยหรือกฎหมาย</li>
+      <li>เมื่อบริการสิ้นสุดลง สิทธิ์การใช้งานจะยุติทันที ท่านควรส่งออก (export) ข้อมูลที่จำเป็นก่อนสิ้นสุดบริการ เราจะจัดการข้อมูลตามที่ระบุใน <a href="/privacy.html">นโยบายความเป็นส่วนตัว</a></li>
+    </ul>
+
+    <h2 id="s12"><span class="num">12.</span>การเปลี่ยนแปลงข้อกำหนด</h2>
+    <p>
+      เราอาจปรับปรุงข้อกำหนดนี้เป็นครั้งคราว หากมีการเปลี่ยนแปลงในสาระสำคัญ เราจะแจ้งให้ทราบผ่านช่องทางที่เหมาะสม
+      (เช่น อีเมล หรือประกาศบนเว็บไซต์) และปรับปรุงวันที่ “มีผลบังคับใช้” ด้านบน การใช้บริการต่อไปหลังการเปลี่ยนแปลงมีผล
+      ถือว่าท่านยอมรับข้อกำหนดฉบับปรับปรุง
+    </p>
+
+    <h2 id="s13"><span class="num">13.</span>กฎหมายที่ใช้บังคับ</h2>
+    <p>
+      ข้อกำหนดนี้อยู่ภายใต้บังคับและการตีความตาม <strong>กฎหมายแห่งราชอาณาจักรไทย</strong> ข้อพิพาทใด ๆ ที่เกิดขึ้นจากหรือเกี่ยวข้องกับ
+      ข้อกำหนดนี้ให้อยู่ในเขตอำนาจของศาลไทย เว้นแต่กฎหมายจะกำหนดเป็นอย่างอื่น
+    </p>
+
+    <h2 id="s14"><span class="num">14.</span>ช่องทางการติดต่อ</h2>
+    <p>หากมีคำถามเกี่ยวกับข้อกำหนดการใช้บริการนี้ โปรดติดต่อ</p>
+    <ul>
+      <li><strong>ผู้ให้บริการ:</strong> SentinelAI</li>
+      <li><strong>เว็บไซต์:</strong> <a href="https://sentinelai.help">https://sentinelai.help</a></li>
+      <li><strong>อีเมล:</strong> <a href="mailto:support@sentinelai.help">support@sentinelai.help</a></li>
+    </ul>
+
+    <hr />
+    <p style="font-size:14px;color:var(--muted);margin-bottom:0;">
+      การใช้บริการ SentinelAI ถือว่าท่านได้อ่านและยอมรับข้อกำหนดฉบับนี้ พร้อมทั้ง
+      <a href="/privacy.html">นโยบายความเป็นส่วนตัว</a> ของเราแล้ว
+    </p>
+  </article>
+</main>
+
+<footer>
+  <div>© 2569 SentinelAI — ระบบป้องกันข้อมูลลับรั่วไหลสู่ AI</div>
+  <div>
+    <a href="/">หน้าหลัก</a>
+    <span class="foot-sep">|</span>
+    <a href="/terms.html">ข้อกำหนดการใช้บริการ</a>
+    <span class="foot-sep">|</span>
+    <a href="/privacy.html">นโยบายความเป็นส่วนตัว</a>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -289,6 +289,15 @@ def list_devices(org_id: int) -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def delete_device(org_id: int, device_pk: int) -> bool:
+    """ถอดอุปกรณ์ออกจากองค์กร (คืน seat) — scoped ด้วย org_id กันข้ามองค์กร."""
+    with _lock:
+        conn = _connect()
+        cur = conn.execute("DELETE FROM devices WHERE org_id=? AND id=?", (org_id, device_pk))
+        conn.commit()
+        return cur.rowcount > 0
+
+
 # ==================== Super-admin cross-org feeds ====================
 def all_events(limit: int = 100, min_risk: int = 0) -> list[dict]:
     with _lock:

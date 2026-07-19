@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>นโยบายความเป็นส่วนตัว — SentinelAI</title>
+<meta name="description" content="นโยบายความเป็นส่วนตัว (Privacy Policy) ของ SentinelAI ตามพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA)" />
+<meta name="robots" content="index, follow" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%A1%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+<style>
+  :root{
+    --bg:#f4f6fb;
+    --panel:#ffffff;
+    --ink:#1b2436;
+    --ink-soft:#4a5568;
+    --muted:#6b7688;
+    --line:#e3e8f0;
+    --brand:#2563eb;
+    --brand-ink:#1e40af;
+    --accent:#0ea5e9;
+    --warn-bg:#fff7ed;
+    --warn-line:#fdba74;
+    --warn-ink:#9a3412;
+    --ok-bg:#ecfdf5;
+    --ok-line:#6ee7b7;
+    --ok-ink:#065f46;
+    --radius:14px;
+    --maxw:760px;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Sarabun","Noto Sans Thai","Leelawadee UI","Tahoma","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    font-size:17px;
+    line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== Header ===== */
+  .site-header{
+    background:linear-gradient(180deg,#ffffff 0%, #f7f9fe 100%);
+    border-bottom:1px solid var(--line);
+    position:sticky;
+    top:0;
+    z-index:10;
+    backdrop-filter:saturate(120%) blur(2px);
+  }
+  .site-header-inner{
+    max-width:var(--maxw);
+    margin:0 auto;
+    padding:14px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    text-decoration:none;
+    color:var(--ink);
+    font-weight:800;
+    font-size:20px;
+    letter-spacing:.2px;
+  }
+  .brand .logo{font-size:22px;line-height:1;}
+  .brand .ai{color:var(--brand);}
+  .back-link{
+    text-decoration:none;
+    color:var(--brand);
+    font-weight:600;
+    font-size:15px;
+    padding:7px 14px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:#fff;
+    transition:background .15s ease,border-color .15s ease;
+    white-space:nowrap;
+  }
+  .back-link:hover{background:#eef3ff;border-color:#c7d6ff;}
+
+  /* ===== Layout ===== */
+  main{
+    max-width:var(--maxw);
+    margin:0 auto;
+    padding:32px 20px 8px;
+  }
+  .doc-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:38px 40px;
+    box-shadow:0 1px 2px rgba(16,24,40,.04),0 10px 30px rgba(16,24,40,.05);
+  }
+  h1{
+    font-size:30px;
+    line-height:1.3;
+    margin:0 0 6px;
+    font-weight:800;
+    color:var(--ink);
+  }
+  .subtitle{
+    color:var(--muted);
+    margin:0 0 18px;
+    font-size:16px;
+  }
+  .effective{
+    display:inline-block;
+    background:#eef3ff;
+    color:var(--brand-ink);
+    border:1px solid #d5e0ff;
+    border-radius:999px;
+    padding:6px 14px;
+    font-size:14px;
+    font-weight:700;
+    margin-bottom:20px;
+  }
+  .disclaimer{
+    background:var(--warn-bg);
+    border:1px solid var(--warn-line);
+    color:var(--warn-ink);
+    border-radius:12px;
+    padding:14px 18px;
+    font-size:15px;
+    line-height:1.6;
+    margin:0 0 30px;
+  }
+  .disclaimer strong{font-weight:800;}
+
+  h2{
+    font-size:20px;
+    margin:34px 0 10px;
+    padding-top:8px;
+    font-weight:800;
+    color:var(--brand-ink);
+    scroll-margin-top:80px;
+  }
+  h2 .num{
+    color:var(--brand);
+    font-variant-numeric:tabular-nums;
+    margin-right:8px;
+  }
+  h3{
+    font-size:17px;
+    margin:20px 0 6px;
+    font-weight:700;
+    color:var(--ink);
+  }
+  p{margin:0 0 12px;color:var(--ink-soft);}
+  ul,ol{margin:0 0 14px;padding-left:24px;color:var(--ink-soft);}
+  li{margin:5px 0;}
+  strong{color:var(--ink);}
+  code,.kbd{
+    background:#eef1f7;
+    border:1px solid #dde3ee;
+    border-radius:6px;
+    padding:1px 6px;
+    font-family:"Cascadia Code",ui-monospace,"Consolas","Courier New",monospace;
+    font-size:14px;
+    color:#334155;
+  }
+  a{color:var(--brand);}
+  hr{border:none;border-top:1px solid var(--line);margin:30px 0;}
+
+  .toc{
+    background:#f8faff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px 20px;
+    margin:0 0 30px;
+  }
+  .toc h2{margin:0 0 8px;font-size:16px;color:var(--ink);padding-top:0;}
+  .toc ol{margin:0;padding-left:22px;font-size:15px;}
+  .toc a{text-decoration:none;color:var(--ink-soft);}
+  .toc a:hover{color:var(--brand);text-decoration:underline;}
+
+  .callout{
+    background:#f1f8ff;
+    border-left:4px solid var(--accent);
+    border-radius:8px;
+    padding:12px 16px;
+    margin:14px 0;
+    font-size:15.5px;
+    color:var(--ink-soft);
+  }
+  .callout-ok{
+    background:var(--ok-bg);
+    border-left:4px solid var(--ok-line);
+    border-radius:8px;
+    padding:14px 16px;
+    margin:14px 0;
+    font-size:15.5px;
+    color:var(--ok-ink);
+  }
+  .callout-ok strong{color:var(--ok-ink);font-weight:800;}
+
+  /* ===== Table ===== */
+  .table-wrap{overflow-x:auto;margin:14px 0;-webkit-overflow-scrolling:touch;}
+  table{
+    border-collapse:collapse;
+    width:100%;
+    min-width:520px;
+    font-size:15px;
+  }
+  th,td{
+    border:1px solid var(--line);
+    padding:10px 12px;
+    text-align:left;
+    vertical-align:top;
+    color:var(--ink-soft);
+  }
+  th{
+    background:#f1f5fb;
+    color:var(--ink);
+    font-weight:700;
+  }
+  tbody tr:nth-child(even) td{background:#fbfcfe;}
+
+  /* ===== Roles cards ===== */
+  .roles{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    margin:16px 0;
+  }
+  .role-card{
+    flex:1 1 240px;
+    background:#f8faff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px 18px;
+  }
+  .role-card .role-tag{
+    display:inline-block;
+    font-size:13px;
+    font-weight:700;
+    color:var(--brand-ink);
+    background:#e6eefe;
+    border-radius:6px;
+    padding:2px 8px;
+    margin-bottom:8px;
+  }
+  .role-card p{margin:0;font-size:15px;}
+
+  /* ===== Footer ===== */
+  footer{
+    max-width:var(--maxw);
+    margin:0 auto;
+    padding:26px 20px 46px;
+    color:var(--muted);
+    font-size:14px;
+    text-align:center;
+    line-height:1.7;
+  }
+  footer a{color:var(--brand);text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+  .foot-sep{color:var(--line);margin:0 8px;}
+
+  @media (max-width:600px){
+    body{font-size:16px;}
+    .doc-card{padding:24px 20px;}
+    h1{font-size:25px;}
+    h2{font-size:18px;}
+    main{padding:20px 14px 4px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="กลับสู่หน้าหลัก SentinelAI">
+      <span class="logo" aria-hidden="true">🛡️</span>
+      <span>Sentinel<span class="ai">AI</span></span>
+    </a>
+    <a class="back-link" href="/">← กลับหน้าหลัก</a>
+  </div>
+</header>
+
+<main>
+  <article class="doc-card">
+    <h1>นโยบายความเป็นส่วนตัว</h1>
+    <p class="subtitle">Privacy Policy — สอดคล้องกับ พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA)</p>
+    <div class="effective">มีผลบังคับใช้: 19 กรกฎาคม 2569</div>
+
+    <div class="disclaimer" role="note">
+      <strong>ข้อควรทราบ:</strong> เอกสารนี้เป็น <strong>แม่แบบ (template)</strong> สำหรับใช้เป็นแนวทางเบื้องต้นเท่านั้น
+      ไม่ถือเป็นคำแนะนำทางกฎหมาย ก่อนนำไปใช้งานจริง (production) ผู้ประกอบการควรให้
+      <strong>ทนายความหรือที่ปรึกษากฎหมายด้าน PDPA</strong> ตรวจทานและปรับแก้ให้สอดคล้องกับการประมวลผลข้อมูลจริงขององค์กร
+    </div>
+
+    <p>
+      นโยบายฉบับนี้อธิบายว่า SentinelAI (“<strong>เรา</strong>”) เก็บรวบรวม ใช้ เปิดเผย และคุ้มครองข้อมูลส่วนบุคคลอย่างไร
+      ในการให้บริการระบบป้องกันข้อมูลลับรั่วไหลสู่ AI สาธารณะ ผ่าน <a href="https://sentinelai.help">https://sentinelai.help</a>
+      โดยคำนึงถึงหลักการตามพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA)
+    </p>
+
+    <nav class="toc" aria-label="สารบัญ">
+      <h2>สารบัญ</h2>
+      <ol>
+        <li><a href="#s1">บทบาทของคู่สัญญา (ผู้ควบคุม / ผู้ประมวลผล)</a></li>
+        <li><a href="#s2">ข้อมูลที่เราเก็บรวบรวม</a></li>
+        <li><a href="#s3">ค่าเริ่มต้น: ไม่เก็บเนื้อหาดิบ</a></li>
+        <li><a href="#s4">วัตถุประสงค์และฐานทางกฎหมาย</a></li>
+        <li><a href="#s5">การส่งข้อมูลไปประมวลผล</a></li>
+        <li><a href="#s6">ระยะเวลาการเก็บรักษา</a></li>
+        <li><a href="#s7">มาตรการรักษาความปลอดภัย</a></li>
+        <li><a href="#s8">สิทธิ์ของเจ้าของข้อมูลตาม PDPA</a></li>
+        <li><a href="#s9">คุกกี้</a></li>
+        <li><a href="#s10">ผู้ติดต่อและเจ้าหน้าที่คุ้มครองข้อมูล (DPO)</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="s1"><span class="num">1.</span>บทบาทของคู่สัญญา (ผู้ควบคุม / ผู้ประมวลผล)</h2>
+    <p>
+      ในบริบทของ PDPA การแบ่งบทบาทมีความสำคัญต่อความรับผิดชอบตามกฎหมาย โดยทั่วไปในการใช้บริการ SentinelAI
+    </p>
+    <div class="roles">
+      <div class="role-card">
+        <span class="role-tag">ผู้ควบคุมข้อมูล (Data Controller)</span>
+        <p><strong>ลูกค้าองค์กร</strong> เป็นผู้กำหนดวัตถุประสงค์และวิธีการประมวลผลข้อมูลของพนักงาน/ผู้ใช้ในองค์กรของตน รวมถึงการเลือกนโยบายการเก็บเนื้อหา</p>
+      </div>
+      <div class="role-card">
+        <span class="role-tag">ผู้ประมวลผลข้อมูล (Data Processor)</span>
+        <p><strong>SentinelAI</strong> ประมวลผลข้อมูลตามคำสั่งและนโยบายที่ลูกค้าองค์กรกำหนด เพื่อให้บริการตรวจจับและป้องกันการรั่วไหลของข้อมูลเท่านั้น</p>
+      </div>
+    </div>
+    <p>
+      สำหรับข้อมูลบัญชีของผู้สมัคร (เช่น อีเมลผู้ดูแลระบบ ข้อมูลการเรียกเก็บเงิน) เราอาจทำหน้าที่เป็นผู้ควบคุมข้อมูลเพื่อการบริหารจัดการบริการ
+      พนักงานหรือผู้ใช้ปลายทางที่มีข้อสงสัยเกี่ยวกับการประมวลผลข้อมูลของตน โปรดติดต่อองค์กรนายจ้างของท่านซึ่งเป็นผู้ควบคุมข้อมูลเป็นลำดับแรก
+    </p>
+
+    <h2 id="s2"><span class="num">2.</span>ข้อมูลที่เราเก็บรวบรวม</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>ประเภทข้อมูล</th><th>ตัวอย่าง</th><th>เหตุผล</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>ข้อมูลบัญชี</strong></td>
+            <td>อีเมล, ชื่อองค์กร, ชื่อผู้ดูแลระบบ, แพ็กเกจ/จำนวนสิทธิ์</td>
+            <td>สร้างและจัดการบัญชี, การเรียกเก็บเงิน, การติดต่อ</td>
+          </tr>
+          <tr>
+            <td><strong>Metadata ของเหตุการณ์</strong></td>
+            <td>ใคร (บัญชี/อุปกรณ์), เมื่อไหร่ (เวลา), ระดับความเสี่ยง, การตัดสินของระบบ (อนุญาต/เตือน/บล็อก), ปลายทาง AI ที่เกี่ยวข้อง</td>
+            <td>แสดงรายงาน, ตรวจสอบย้อนหลัง (audit), ปรับปรุงการตรวจจับ</td>
+          </tr>
+          <tr>
+            <td><strong>ลายนิ้วมืออุปกรณ์ + IP</strong></td>
+            <td>device fingerprint, หมายเลข IP, ข้อมูลระบบพื้นฐานของอุปกรณ์</td>
+            <td>บังคับสิทธิ์ <strong>1 เครื่อง = 1 สิทธิ์</strong> และป้องกันการใช้ Org Key เกินจำนวนที่ซื้อ</td>
+          </tr>
+          <tr>
+            <td><strong>ข้อมูลการใช้งานทางเทคนิค</strong></td>
+            <td>บันทึกล็อกการเชื่อมต่อ, เวอร์ชัน agent, สถานะการทำงาน</td>
+            <td>รักษาความปลอดภัย, แก้ไขปัญหา, รักษาเสถียรภาพของบริการ</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="s3"><span class="num">3.</span>ค่าเริ่มต้น: ไม่เก็บเนื้อหาดิบ</h2>
+    <div class="callout-ok">
+      <strong>โดยค่าเริ่มต้น เราไม่เก็บ “เนื้อหาดิบ” (raw content)</strong> ที่พนักงานพิมพ์หรือส่ง เราเก็บเพียง
+      <strong>metadata</strong> ที่จำเป็น (เช่น เวลา ระดับความเสี่ยง และผลการตัดสิน) เพื่อการรายงานและการตรวจสอบเท่านั้น
+    </div>
+    <p>
+      องค์กรลูกค้าสามารถ <strong>ปรับเปลี่ยนพฤติกรรมนี้ได้ตามนโยบายภายในของตน</strong> ผ่านการตั้งค่า
+      <code>SENTINEL_STORE_CONTENT</code> เช่น หากองค์กรต้องการเก็บเนื้อหาที่ตรวจพบเพื่อการสอบสวนภายในหรือหลักฐานเชิงกำกับดูแล
+    </p>
+    <div class="callout">
+      หากองค์กรเปิดใช้การเก็บเนื้อหา (<code>SENTINEL_STORE_CONTENT</code>) องค์กรในฐานะ <strong>ผู้ควบคุมข้อมูล</strong>
+      มีหน้าที่รับผิดชอบในการแจ้งพนักงาน จัดให้มีฐานทางกฎหมายที่เหมาะสม และปฏิบัติตาม PDPA สำหรับการเก็บเนื้อหาดังกล่าว
+    </div>
+
+    <h2 id="s4"><span class="num">4.</span>วัตถุประสงค์และฐานทางกฎหมาย</h2>
+    <p>เราประมวลผลข้อมูลส่วนบุคคลตามวัตถุประสงค์และฐานทางกฎหมายภายใต้ PDPA ดังนี้</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>วัตถุประสงค์</th><th>ฐานทางกฎหมาย (PDPA)</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ให้บริการ SentinelAI ตามสัญญา, จัดการบัญชี, เรียกเก็บเงิน</td>
+            <td>การปฏิบัติตามสัญญา (มาตรา 24(3))</td>
+          </tr>
+          <tr>
+            <td>ป้องกันข้อมูลลับรั่วไหล, บังคับสิทธิ์ 1 เครื่อง/สิทธิ์, รักษาความปลอดภัยระบบ, ป้องกันการใช้งานโดยมิชอบ</td>
+            <td>ประโยชน์โดยชอบด้วยกฎหมาย (มาตรา 24(5))</td>
+          </tr>
+          <tr>
+            <td>ปฏิบัติตามกฎหมายหรือคำสั่งของหน่วยงานที่มีอำนาจ</td>
+            <td>การปฏิบัติตามกฎหมาย (มาตรา 24(6))</td>
+          </tr>
+          <tr>
+            <td>การเก็บเนื้อหาเพิ่มเติมตามที่องค์กรเปิดใช้งาน / การสื่อสารการตลาด (ถ้ามี)</td>
+            <td>ความยินยอม หรือฐานที่องค์กรผู้ควบคุมข้อมูลกำหนด (มาตรา 24(1))</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="s5"><span class="num">5.</span>การส่งข้อมูลไปประมวลผล</h2>
+    <p>
+      เพื่อประเมินความเสี่ยงของข้อความ/ไฟล์ก่อนที่จะถูกส่งไปยังเครื่องมือ AI สาธารณะ
+      <strong>เนื้อหาจะถูกส่งไปตรวจสอบที่เซิร์ฟเวอร์ของเรา</strong> เพื่อวิเคราะห์แบบเรียลไทม์
+      การส่งผ่านข้อมูลใช้การเข้ารหัส (encryption in transit)
+    </p>
+    <p>
+      ในการวิเคราะห์ด้วย AI เราใช้ผู้ให้บริการประมวลผลภายนอก (sub-processor) คือ
+      <strong>BytePlus ModelArk</strong> ในฐานะ <strong>ผู้ประมวลผลข้อมูล</strong> เพื่อรันโมเดลตรวจจับความอ่อนไหวของเนื้อหา
+    </p>
+    <ul>
+      <li>เราส่งเฉพาะข้อมูลที่จำเป็นต่อการวิเคราะห์ความเสี่ยงเท่านั้น</li>
+      <li>เมื่อไม่ได้เปิดใช้การเก็บเนื้อหา ผลลัพธ์ที่บันทึกไว้จะเป็นเพียง metadata (ระดับความเสี่ยงและการตัดสิน) ไม่ใช่เนื้อหาดิบ</li>
+      <li>เราคัดเลือกผู้ประมวลผลภายนอกโดยคำนึงถึงมาตรฐานความปลอดภัย และจัดให้มีข้อตกลงการประมวลผลข้อมูลตามที่ PDPA กำหนด</li>
+    </ul>
+    <div class="callout">
+      การส่งหรือถ่ายโอนข้อมูลไปยังผู้ประมวลผลที่อาจอยู่ต่างประเทศจะดำเนินการภายใต้มาตรการคุ้มครองที่เหมาะสมตามที่ PDPA กำหนด
+    </div>
+
+    <h2 id="s6"><span class="num">6.</span>ระยะเวลาการเก็บรักษา</h2>
+    <ul>
+      <li><strong>ข้อมูลบัญชี:</strong> เก็บตลอดระยะเวลาที่ท่านเป็นลูกค้า และตามระยะเวลาที่จำเป็นเพื่อปฏิบัติตามกฎหมาย (เช่น เอกสารทางบัญชี/ภาษี)</li>
+      <li><strong>Metadata ของเหตุการณ์:</strong> เก็บตามระยะเวลาที่องค์กรกำหนดหรือค่าเริ่มต้นของบริการ เพื่อการรายงานและตรวจสอบย้อนหลัง</li>
+      <li><strong>ลายนิ้วมืออุปกรณ์/IP:</strong> เก็บเท่าที่จำเป็นต่อการบังคับสิทธิ์และความปลอดภัย</li>
+      <li><strong>เนื้อหา (หากเปิดใช้):</strong> เก็บตามนโยบายและระยะเวลาที่องค์กรผู้ควบคุมข้อมูลกำหนด</li>
+    </ul>
+    <p>เมื่อสิ้นสุดวัตถุประสงค์หรือเมื่อบริการยุติ เราจะลบหรือทำให้ข้อมูลไม่สามารถระบุตัวตนได้ ภายในระยะเวลาที่เหมาะสม เว้นแต่กฎหมายกำหนดให้เก็บต่อไป</p>
+
+    <h2 id="s7"><span class="num">7.</span>มาตรการรักษาความปลอดภัย</h2>
+    <ul>
+      <li>การเข้ารหัสข้อมูลระหว่างการส่ง (encryption in transit)</li>
+      <li>การควบคุมการเข้าถึงตามหลักการให้สิทธิ์เท่าที่จำเป็น (least privilege) และการยืนยันตัวตน</li>
+      <li>การบันทึกล็อกและการตรวจสอบเพื่อเฝ้าระวังกิจกรรมที่ผิดปกติ</li>
+      <li>การคัดเลือกและกำกับผู้ประมวลผลภายนอกให้มีมาตรฐานความปลอดภัยที่เหมาะสม</li>
+    </ul>
+    <p>แม้เราจะใช้มาตรการที่เหมาะสมตามสมควร แต่ไม่มีระบบใดปลอดภัยสมบูรณ์ 100% ท่านมีส่วนช่วยรักษาความปลอดภัยด้วยการดูแล Org Key และข้อมูลเข้าสู่ระบบ</p>
+
+    <h2 id="s8"><span class="num">8.</span>สิทธิ์ของเจ้าของข้อมูลตาม PDPA</h2>
+    <p>ภายใต้ PDPA เจ้าของข้อมูลส่วนบุคคลมีสิทธิ์ดังต่อไปนี้ (ภายใต้เงื่อนไขและข้อยกเว้นที่กฎหมายกำหนด)</p>
+    <ul>
+      <li><strong>สิทธิ์ในการเข้าถึง (Access):</strong> ขอเข้าถึงและขอสำเนาข้อมูลส่วนบุคคลของตน</li>
+      <li><strong>สิทธิ์ในการแก้ไข (Rectification):</strong> ขอให้แก้ไขข้อมูลที่ไม่ถูกต้องหรือไม่เป็นปัจจุบัน</li>
+      <li><strong>สิทธิ์ในการลบ (Erasure):</strong> ขอให้ลบหรือทำให้ข้อมูลไม่สามารถระบุตัวตนได้</li>
+      <li><strong>สิทธิ์ในการคัดค้าน (Objection):</strong> คัดค้านการเก็บ ใช้ หรือเปิดเผยข้อมูลในบางกรณี</li>
+      <li><strong>สิทธิ์ในการระงับการใช้ / การให้โอนย้ายข้อมูล / การถอนความยินยอม</strong> ตามที่กฎหมายกำหนด</li>
+    </ul>
+    <div class="callout">
+      เนื่องจากในหลายกรณี <strong>องค์กรนายจ้างเป็นผู้ควบคุมข้อมูล</strong> พนักงาน/ผู้ใช้ปลายทางควรใช้สิทธิ์ผ่านองค์กรของตนเป็นลำดับแรก
+      หากท่านเป็นลูกค้าองค์กรและต้องการให้เราดำเนินการในฐานะผู้ประมวลผล โปรดติดต่อเราตามช่องทางด้านล่าง
+    </div>
+
+    <h2 id="s9"><span class="num">9.</span>คุกกี้</h2>
+    <p>
+      เราใช้คุกกี้ <strong>เท่าที่จำเป็น (strictly necessary)</strong> เพื่อการเข้าสู่ระบบและการรักษาสถานะเซสชัน (session) ของท่านเท่านั้น
+      เราไม่ใช้คุกกี้เพื่อการโฆษณาติดตามข้ามเว็บไซต์ ท่านสามารถตั้งค่าเบราว์เซอร์เพื่อปฏิเสธคุกกี้ได้ แต่การปฏิเสธคุกกี้ที่จำเป็น
+      อาจทำให้ไม่สามารถเข้าสู่ระบบหรือใช้งานบางส่วนของบริการได้
+    </p>
+
+    <h2 id="s10"><span class="num">10.</span>ผู้ติดต่อและเจ้าหน้าที่คุ้มครองข้อมูล (DPO)</h2>
+    <p>หากท่านมีคำถาม ต้องการใช้สิทธิ์ตาม PDPA หรือมีข้อร้องเรียนเกี่ยวกับการคุ้มครองข้อมูลส่วนบุคคล โปรดติดต่อ</p>
+    <ul>
+      <li><strong>ผู้ให้บริการ:</strong> SentinelAI</li>
+      <li><strong>เจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคล (DPO):</strong> <a href="mailto:dpo@sentinelai.help">dpo@sentinelai.help</a></li>
+      <li><strong>อีเมลทั่วไป:</strong> <a href="mailto:privacy@sentinelai.help">privacy@sentinelai.help</a></li>
+      <li><strong>เว็บไซต์:</strong> <a href="https://sentinelai.help">https://sentinelai.help</a></li>
+    </ul>
+    <p>
+      ท่านมีสิทธิ์ยื่นเรื่องร้องเรียนต่อสำนักงานคณะกรรมการคุ้มครองข้อมูลส่วนบุคคล (สคส.) หากเห็นว่าการประมวลผลข้อมูลของท่าน
+      ไม่เป็นไปตามกฎหมาย
+    </p>
+
+    <hr />
+    <p style="font-size:14px;color:var(--muted);margin-bottom:0;">
+      นโยบายฉบับนี้เป็นส่วนหนึ่งของ <a href="/terms.html">ข้อกำหนดการใช้บริการ</a> ของ SentinelAI
+      เราอาจปรับปรุงนโยบายเป็นครั้งคราวและจะแจ้งการเปลี่ยนแปลงในสาระสำคัญพร้อมปรับวันที่ “มีผลบังคับใช้” ด้านบน
+    </p>
+  </article>
+</main>
+
+<footer>
+  <div>© 2569 SentinelAI — ระบบป้องกันข้อมูลลับรั่วไหลสู่ AI</div>
+  <div>
+    <a href="/">หน้าหลัก</a>
+    <span class="foot-sep">|</span>
+    <a href="/terms.html">ข้อกำหนดการใช้บริการ</a>
+    <span class="foot-sep">|</span>
+    <a href="/privacy.html">นโยบายความเป็นส่วนตัว</a>
+  </div>
+</footer>
+
+</body>
+</html>

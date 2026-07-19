@@ -289,21 +289,192 @@ function showApp() {
 function renderAuth(tab = "login") {
   const el = $("#auth-screen");
   el.innerHTML = `
-    <div class="auth-card">
-      <div class="auth-brand">
-        <div class="brand-logo">🛡️</div>
-        <div class="brand-name">Sentinel<span class="brand-ai">AI</span></div>
-        <div class="auth-tagline">ป้องกันข้อมูลลับองค์กรรั่วไหลสู่ AI</div>
-      </div>
-      <div class="auth-tabs">
-        <button class="auth-tab ${tab === "login" ? "active" : ""}" data-tab="login">เข้าสู่ระบบ</button>
-        <button class="auth-tab ${tab === "signup" ? "active" : ""}" data-tab="signup">สมัครใช้งาน</button>
-      </div>
-      <div id="auth-form-wrap"></div>
-      <div class="auth-foot">🔒 ปลอดภัยด้วยหลัก Privacy-by-Design · เก็บเฉพาะ metadata (PDPA)</div>
+    <div class="lp">
+      <!-- ===== แถบนำทางบนสุด ===== -->
+      <header class="lp-nav">
+        <div class="lp-brand">
+          <span class="lp-logo" aria-hidden="true">🛡️</span>
+          <span class="lp-brandname">Sentinel<span class="brand-ai">AI</span></span>
+        </div>
+        <nav class="lp-nav-actions" aria-label="เมนู">
+          <a class="lp-navlink" href="#lp-pricing">ราคา</a>
+          <a class="lp-navlink" href="#" data-lp-cta="login">เข้าสู่ระบบ</a>
+          <button type="button" class="btn btn-primary btn-sm" data-lp-cta="signup">เริ่มทดลองฟรี</button>
+        </nav>
+      </header>
+
+      <!-- ===== HERO ===== -->
+      <section class="lp-hero">
+        <span class="lp-badge">🤖 ขับเคลื่อนด้วย AI · ป้องกันข้อมูลรั่วสู่ AI สาธารณะ</span>
+        <h1 class="lp-hero-title">กันข้อมูลบริษัท<span class="lp-grad"> รั่วสู่ AI</span></h1>
+        <p class="lp-hero-sub">SentinelAI ดักจับข้อมูลลับก่อนพนักงานส่งเข้า ChatGPT · Gemini · Claude · Copilot — ขับเคลื่อนด้วย AI</p>
+        <div class="lp-hero-cta">
+          <button type="button" class="btn btn-primary lp-btn-lg" data-lp-cta="signup">เริ่มทดลองฟรี 14 วัน</button>
+          <button type="button" class="btn btn-ghost lp-btn-lg" data-lp-cta="login">เข้าสู่ระบบ</button>
+        </div>
+        <div class="lp-trust">
+          <span class="lp-trust-item">🛡️ ป้องกัน 3 ชั้น</span>
+          <span class="lp-trust-sep" aria-hidden="true">·</span>
+          <span class="lp-trust-item">🔒 ไม่เก็บเนื้อหาดิบ (PDPA)</span>
+          <span class="lp-trust-sep" aria-hidden="true">·</span>
+          <span class="lp-trust-item">💻 1 เครื่อง = 1 สิทธิ์</span>
+          <span class="lp-trust-sep" aria-hidden="true">·</span>
+          <span class="lp-trust-item">⚡ ตั้งค่า 5 นาที</span>
+        </div>
+      </section>
+
+      <!-- ===== FEATURES ===== -->
+      <section class="lp-section">
+        <div class="lp-sec-head">
+          <h2 class="lp-h2">ปกป้องข้อมูลลับทุกช่องทาง AI</h2>
+          <p class="lp-sec-sub">ตรวจจับ วิเคราะห์ และหยุดการรั่วไหล ก่อนข้อมูลออกจากองค์กร</p>
+        </div>
+        <div class="lp-features">
+          <article class="lp-feat">
+            <div class="lp-feat-ico" aria-hidden="true">🛡️</div>
+            <h3 class="lp-feat-t">ดักก่อนส่ง</h3>
+            <p class="lp-feat-d">Extension + Agent ตรวจทุกข้อความก่อนถูกส่งถึงผู้ให้บริการ AI</p>
+          </article>
+          <article class="lp-feat">
+            <div class="lp-feat-ico" aria-hidden="true">🧠</div>
+            <h3 class="lp-feat-t">ตรวจ 3 ชั้น</h3>
+            <p class="lp-feat-d">Regex + Fingerprint + AI (BytePlus) วิเคราะห์บริบทเชิงลึกอย่างแม่นยำ</p>
+          </article>
+          <article class="lp-feat">
+            <div class="lp-feat-ico" aria-hidden="true">🔒</div>
+            <h3 class="lp-feat-t">กันแชร์คีย์</h3>
+            <p class="lp-feat-d">ผูกฮาร์ดแวร์ 1 เครื่อง = 1 สิทธิ์ ป้องกันการใช้สิทธิ์ข้ามเครื่อง</p>
+          </article>
+          <article class="lp-feat">
+            <div class="lp-feat-ico" aria-hidden="true">📊</div>
+            <h3 class="lp-feat-t">Dashboard เห็นทุกเหตุการณ์</h3>
+            <p class="lp-feat-d">สถิติ แนวโน้ม และรายงานการรั่วไหลแบบเรียลไทม์ในที่เดียว</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ===== HOW IT WORKS ===== -->
+      <section class="lp-section">
+        <div class="lp-sec-head">
+          <h2 class="lp-h2">เริ่มใช้งานใน 3 ขั้นตอน</h2>
+          <p class="lp-sec-sub">ติดตั้งเร็ว ใช้งานง่าย ไม่รบกวนการทำงานของพนักงาน</p>
+        </div>
+        <div class="lp-steps">
+          <div class="lp-step">
+            <div class="lp-step-n" aria-hidden="true">1</div>
+            <h3 class="lp-step-t">สมัคร + ติดตั้ง</h3>
+            <p class="lp-step-d">สร้างองค์กร รับ API Key แล้วติดตั้ง Extension/Agent ภายใน 5 นาที</p>
+          </div>
+          <div class="lp-step">
+            <div class="lp-step-n" aria-hidden="true">2</div>
+            <h3 class="lp-step-t">พนักงานใช้ AI ตามปกติ</h3>
+            <p class="lp-step-d">ทำงานกับ ChatGPT, Gemini, Claude, Copilot ได้เหมือนเดิมทุกอย่าง</p>
+          </div>
+          <div class="lp-step">
+            <div class="lp-step-n" aria-hidden="true">3</div>
+            <h3 class="lp-step-t">ระบบดัก/เตือน/บล็อกอัตโนมัติ</h3>
+            <p class="lp-step-d">SentinelAI ตรวจจับข้อมูลลับและจัดการตามนโยบายทันทีแบบเรียลไทม์</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PRICING ===== -->
+      <section class="lp-section" id="lp-pricing">
+        <div class="lp-sec-head">
+          <h2 class="lp-h2">แพ็กเกจราคา</h2>
+          <p class="lp-sec-sub">คิดค่าใช้จ่ายแบบรายเครื่อง/เดือน — จ่ายเท่าที่ใช้จริง</p>
+        </div>
+        <div class="lp-pricing">
+          <article class="lp-plan">
+            <div class="lp-plan-name">STARTER</div>
+            <div class="lp-plan-price"><span class="lp-plan-amt">฿199</span><span class="lp-plan-unit">/เครื่อง/เดือน</span></div>
+            <div class="lp-plan-cap">สำหรับทีมเล็ก</div>
+            <ul class="lp-plan-feats">
+              <li>สูงสุด 5 เครื่อง</li>
+              <li>ตรวจ 2,000 ครั้ง/เดือน</li>
+              <li>Dashboard</li>
+              <li>อีเมลซัพพอร์ต</li>
+            </ul>
+            <button type="button" class="btn btn-ghost btn-block" data-lp-cta="signup">เริ่มทดลองฟรี</button>
+          </article>
+
+          <article class="lp-plan lp-plan--hot">
+            <div class="lp-plan-badge">แนะนำ</div>
+            <div class="lp-plan-name">BUSINESS</div>
+            <div class="lp-plan-price"><span class="lp-plan-amt">฿149</span><span class="lp-plan-unit">/เครื่อง/เดือน</span></div>
+            <div class="lp-plan-cap">ยอดนิยม — สำหรับธุรกิจที่กำลังเติบโต</div>
+            <ul class="lp-plan-feats">
+              <li>6–50 เครื่อง</li>
+              <li>ตรวจ 20,000 ครั้ง/เดือน</li>
+              <li>ทุกอย่างใน Starter</li>
+              <li>นโยบายกำหนดเอง</li>
+              <li>Fingerprint เอกสารลับ</li>
+            </ul>
+            <button type="button" class="btn btn-primary btn-block" data-lp-cta="signup">เริ่มทดลองฟรี 14 วัน</button>
+          </article>
+
+          <article class="lp-plan">
+            <div class="lp-plan-name">ENTERPRISE</div>
+            <div class="lp-plan-price"><span class="lp-plan-amt">ติดต่อฝ่ายขาย</span></div>
+            <div class="lp-plan-cap">สำหรับองค์กรขนาดใหญ่</div>
+            <ul class="lp-plan-feats">
+              <li>50+ เครื่อง</li>
+              <li>ไม่จำกัดการตรวจ</li>
+              <li>SSO (Single Sign-On)</li>
+              <li>ผู้ดูแลบัญชี (Account Manager)</li>
+              <li>SLA รับประกันบริการ</li>
+            </ul>
+            <button type="button" class="btn btn-ghost btn-block" data-lp-cta="signup">ติดต่อฝ่ายขาย</button>
+          </article>
+        </div>
+        <p class="lp-price-note">* ราคาข้างต้นเป็น <b>ตัวอย่าง</b> ปรับเปลี่ยนได้ · ยังไม่รวมภาษีมูลค่าเพิ่ม (VAT)</p>
+      </section>
+
+      <!-- ===== AUTH (สมัคร / เข้าสู่ระบบ) — การ์ดเดิม ไม่เปลี่ยน logic/id ===== -->
+      <section class="lp-auth" id="lp-auth">
+        <div class="lp-auth-head">
+          <h2 class="lp-h2">เริ่มใช้งานวันนี้</h2>
+          <p class="lp-sec-sub">สร้างองค์กรและเริ่มทดลองฟรี 14 วัน — ไม่ต้องใช้บัตรเครดิต</p>
+        </div>
+        <div class="auth-card">
+          <div class="auth-brand">
+            <div class="brand-logo">🛡️</div>
+            <div class="brand-name">Sentinel<span class="brand-ai">AI</span></div>
+            <div class="auth-tagline">ป้องกันข้อมูลลับองค์กรรั่วไหลสู่ AI</div>
+          </div>
+          <div class="auth-tabs">
+            <button class="auth-tab ${tab === "login" ? "active" : ""}" data-tab="login">เข้าสู่ระบบ</button>
+            <button class="auth-tab ${tab === "signup" ? "active" : ""}" data-tab="signup">สมัครใช้งาน</button>
+          </div>
+          <div id="auth-form-wrap"></div>
+          <div class="auth-foot">🔒 ปลอดภัยด้วยหลัก Privacy-by-Design · เก็บเฉพาะ metadata (PDPA)</div>
+        </div>
+      </section>
+
+      <!-- ===== FOOTER ===== -->
+      <footer class="lp-footer">
+        <div class="lp-foot-brand"><span aria-hidden="true">🛡️</span> Sentinel<span class="brand-ai">AI</span></div>
+        <nav class="lp-foot-links" aria-label="ลิงก์ท้ายหน้า">
+          <a href="#" onclick="return false">เงื่อนไขการใช้งาน</a>
+          <a href="#" onclick="return false">นโยบายความเป็นส่วนตัว</a>
+          <a href="#" onclick="return false">ติดต่อเรา</a>
+        </nav>
+        <div class="lp-foot-copy">© 2026 SentinelAI · ป้องกันข้อมูลลับรั่วไหลสู่ AI</div>
+      </footer>
     </div>`;
   $$(".auth-tab", el).forEach((b) => b.addEventListener("click", () => renderAuth(b.dataset.tab)));
+  // ปุ่ม CTA บนหน้า Landing → เลื่อน/โฟกัสไปยังการ์ดสมัคร-เข้าสู่ระบบ (ไม่แตะ logic ของ auth)
+  $$("[data-lp-cta]", el).forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); goAuth(b.dataset.lpCta); }));
   (tab === "signup" ? renderSignupForm : renderLoginForm)();
+}
+
+// เลื่อนหน้าไปยังการ์ด Auth แล้วสลับแท็บ + โฟกัสช่องอีเมล (ใช้กับปุ่ม CTA ของ Landing)
+function goAuth(tab = "login") {
+  renderAuth(tab === "signup" ? "signup" : "login");
+  const card = $("#lp-auth");
+  if (card) card.scrollIntoView({ behavior: REDUCE_MOTION ? "auto" : "smooth", block: "center" });
+  const input = $(tab === "signup" ? "#su-email" : "#lg-email");
+  if (input) setTimeout(() => { try { input.focus({ preventScroll: true }); } catch { input.focus(); } }, REDUCE_MOTION ? 0 : 420);
 }
 
 function renderLoginForm() {
@@ -1524,6 +1695,46 @@ function installGuide(apiKey) {
 /* ============================================================================
  *  หน้า 7: ตั้งค่า & เชื่อมต่อ (Setup) — API key + สถานะ AI + โมเดล + เครื่องมือ
  * ========================================================================== */
+// ---- Devices (จัดการเครื่อง/สิทธิ์ — ตอกย้ำ 1 เครื่อง=1 สิทธิ์) ----
+function devicesTable(d) {
+  const devs = d.devices || [];
+  const seatInfo = (d.seats != null)
+    ? `<div class="micro" style="margin-bottom:10px">ใช้ไป <b>${fmtNum(d.used || 0)}</b> / <b>${fmtNum(d.seats)}</b> สิทธิ์ (seat)</div>` : "";
+  if (!devs.length)
+    return seatInfo + `<div class="micro">ยังไม่มีเครื่องลงทะเบียน — ติดตั้ง Extension/Agent แล้วใส่ Org Key เครื่องจะโผล่ที่นี่</div>`;
+  const rows = devs.map((v) => {
+    const status = v.shared
+      ? `<span class="badge" style="background:rgba(251,86,112,.15);color:#fb5670;border:1px solid rgba(251,86,112,.35)">⚠️ สงสัยแชร์คีย์</span> <span class="micro">(${v.distinct_ips} IP)</span>`
+      : `<span class="badge badge-tag">ปกติ</span>`;
+    const kind = v.kind === "endpoint" ? "💻 คอม" : "🌐 เบราว์เซอร์";
+    return `<tr>
+      <td>${esc(v.name || v.device_id || "-")}${v.user ? `<div class="micro">${esc(v.user)}</div>` : ""}</td>
+      <td>${kind}</td>
+      <td class="mono">${esc(v.last_ip || "-")}</td>
+      <td>${status}</td>
+      <td class="mono">${fmtNum(v.events || 0)}</td>
+      <td><button class="btn btn-sm btn-ghost" data-revoke="${v.id}">ถอด</button></td>
+    </tr>`;
+  }).join("");
+  return seatInfo + `<div class="table-wrap"><table class="tbl"><thead><tr>
+    <th>เครื่อง</th><th>ชนิด</th><th>IP ล่าสุด</th><th>สถานะ</th><th>เหตุการณ์</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+async function loadDevices() {
+  const box = $("#dev-body"); if (!box) return;
+  try {
+    box.innerHTML = devicesTable(await api.get("/devices"));
+    $$("[data-revoke]", box).forEach((b) => b.addEventListener("click", async (e) => {
+      const id = e.currentTarget.dataset.revoke;
+      if (!confirm("ถอดเครื่องนี้ออก? (เครื่องนั้นต้องลงทะเบียนใหม่ถึงจะใช้งานได้อีก)")) return;
+      e.currentTarget.disabled = true;
+      try { await api.post(`/devices/${id}/revoke`, {}); toast("ถอดอุปกรณ์แล้ว — คืน 1 สิทธิ์", "ok"); loadDevices(); }
+      catch (err) { toast("ถอดไม่สำเร็จ: " + err.message, "err"); e.currentTarget.disabled = false; }
+    }));
+  } catch (e) { if (e.status === 401) return; box.innerHTML = `<div class="micro">โหลดรายการอุปกรณ์ไม่ได้</div>`; }
+}
+
 async function renderSettings() {
   setView(pageHead("ตั้งค่า & เชื่อมต่อ", "คีย์ API ขององค์กร, สถานะการเชื่อมต่อ AI (BytePlus ModelArk) และเครื่องมือ") + `<div id="set-body">${loadingBlock()}</div>`);
   let cfg, health, org;
@@ -1595,6 +1806,13 @@ async function renderSettings() {
         </tbody></table></div>
     </div>
 
+    <!-- อุปกรณ์ที่ใช้สิทธิ์ -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-head"><h2 class="card-title">🖥️ เครื่องที่ใช้สิทธิ์ (Devices)</h2></div>
+      <p class="micro" style="margin:0 0 12px">ทุกเครื่องที่ติดตั้ง + ใช้ Org Key ของคุณ · กด “ถอด” เพื่อคืนสิทธิ์ (seat) · ⚠️ = สงสัยแชร์คีย์</p>
+      <div id="dev-body">${loadingBlock()}</div>
+    </div>
+
     <div class="card" style="margin-top:16px">
       <div class="card-head"><h2 class="card-title">🧰 เครื่องมือ</h2></div>
       <p class="micro" style="margin:0 0 12px">ใส่ข้อมูลตัวอย่าง (เหตุการณ์ 14 วัน + เอกสารลับ) ให้องค์กรของคุณ เพื่อทดลองใช้งาน Dashboard ทั้งหมด</p>
@@ -1617,6 +1835,7 @@ async function renderSettings() {
   });
 
   $("#btn-seed").addEventListener("click", (e) => seedDemo(e.currentTarget));
+  loadDevices();
   $("#btn-ping")?.addEventListener("click", async (e) => {
     const b = e.currentTarget, out = $("#ping-out"); b.disabled = true; const oo = b.innerHTML; b.innerHTML = '<span class="spinner"></span> กำลังทดสอบ…'; out.textContent = "";
     try {
