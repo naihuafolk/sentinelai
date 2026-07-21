@@ -210,8 +210,9 @@ class ClassificationEngine:
         # Fail-safe: มีรูปแนบมาแต่ AI อ่านไม่สำเร็จ → ห้ามปล่อยผ่านเงียบ ๆ (กันรูปข้อมูลลับหลุด)
         image_unverified = bool(images) and not ai_used
         if image_unverified:
-            risk = max(risk, 38)  # ระดับ "warn" — แจ้งเตือนให้ผู้ใช้ตรวจภาพเอง
-            label = _max_label([label, Label.INTERNAL])
+            # ตั้งเป็น Confidential → เข้ากฎ warn-confidential = "warn" (เด้งเตือนผู้ใช้ ไม่เงียบแบบ monitor)
+            risk = max(risk, 45)
+            label = _max_label([label, Label.CONFIDENTIAL])
             reasons = ["⚠️ ตรวจรูปด้วย AI ไม่สำเร็จชั่วคราว — กันไว้ก่อน โปรดตรวจสอบภาพเอง"] + reasons
             engine_tag = "failsafe"
         elif not all_local and not ai_used:
