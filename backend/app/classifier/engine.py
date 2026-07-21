@@ -117,19 +117,20 @@ class ClassificationEngine:
         all_local = regex_dets + fp_dets
 
         hard = [d for d in all_local if d.type in HARD_TYPES or d.engine == "fingerprint"]
+        hard_regex = [d for d in regex_dets if d.type in HARD_TYPES]  # ข้อมูลชัด (บัตร/ปชช./คีย์)
         regex_all_risk = _combine([d.weight for d in all_local])
         hard_floor = _combine([d.weight for d in hard])
         local_labels = [d.label for d in all_local]
 
-        # เรียก AI เมื่อไร: มีภาพ / มีสัญญาณเสี่ยงพอ / มี fingerprint / บังคับ
+        # เรียก AI เมื่อไร: รูป/บังคับ/fingerprint = เสมอ · แต่ถ้าเจอ "ข้อมูลชัด" (hard regex)
+        # = ตัดสินจาก Regex ทันที ไม่ต้องรอ AI ช้า (บัตร→redact · คีย์→block ใน <1 วิ)
         soft_present = any(d.type.startswith("signal:") for d in regex_dets)
         should_ai = (
             settings.ai_enabled and (
                 force_ai is True
                 or bool(images)
                 or bool(fp_dets)
-                or regex_all_risk >= settings.ai_risk_threshold
-                or soft_present
+                or (not hard_regex and (soft_present or regex_all_risk >= settings.ai_risk_threshold))
             )
         )
         if force_ai is False:

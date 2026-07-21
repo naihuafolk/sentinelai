@@ -146,7 +146,7 @@ PATTERNS: list[PatternDef] = [
         validator=validate_thai_id, mask=lambda s: mask_middle(s, 1, 1),
     ),
     PatternDef(
-        "credit_card", "financial", Label.CONFIDENTIAL, 75,
+        "credit_card", "pii", Label.CONFIDENTIAL, 75,
         re.compile(r"\b(?:\d[ -]?){13,19}\b"),
         "พบหมายเลขบัตรเครดิต (ผ่าน Luhn check)",
         validator=validate_luhn, mask=lambda s: mask_middle(s, 4, 4),
