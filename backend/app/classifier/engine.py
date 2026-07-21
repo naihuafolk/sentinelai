@@ -207,7 +207,14 @@ class ClassificationEngine:
         # ปรับ label ให้สอดคล้องกับ risk ขั้นต่ำ (กันเคส label สูงแต่ risk ต่ำผิดปกติ)
         if risk >= 76:
             label = _max_label([label, Label.CONFIDENTIAL])
-        if not all_local and not ai_used:
+        # Fail-safe: มีรูปแนบมาแต่ AI อ่านไม่สำเร็จ → ห้ามปล่อยผ่านเงียบ ๆ (กันรูปข้อมูลลับหลุด)
+        image_unverified = bool(images) and not ai_used
+        if image_unverified:
+            risk = max(risk, 38)  # ระดับ "warn" — แจ้งเตือนให้ผู้ใช้ตรวจภาพเอง
+            label = _max_label([label, Label.INTERNAL])
+            reasons = ["⚠️ ตรวจรูปด้วย AI ไม่สำเร็จชั่วคราว — กันไว้ก่อน โปรดตรวจสอบภาพเอง"] + reasons
+            engine_tag = "failsafe"
+        elif not all_local and not ai_used:
             label, risk = Label.PUBLIC, 0
 
         return Classification(

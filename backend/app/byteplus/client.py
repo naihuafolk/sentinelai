@@ -60,11 +60,19 @@ class ByteplusClient:
         if not self.enabled:
             raise ByteplusError("BytePlus API key not configured")
         url = f"{self.base_url}{path}"
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            resp = await client.post(url, headers=self._headers(), json=payload)
-        if resp.status_code >= 400:
-            raise ByteplusError(f"ModelArk {resp.status_code}: {resp.text[:500]}")
-        return resp.json()
+        last: Optional[Exception] = None
+        for attempt in range(2):  # ลองซ้ำ 1 ครั้ง — dola-seed แกว่ง/ช้าบางครั้ง
+            try:
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    resp = await client.post(url, headers=self._headers(), json=payload)
+                if resp.status_code >= 400:
+                    raise ByteplusError(f"ModelArk {resp.status_code}: {resp.text[:500]}")
+                return resp.json()
+            except Exception as e:
+                last = e
+                if attempt == 0:
+                    log.warning("ModelArk call failed (attempt 1), retrying: %s", e)
+        raise last if last else ByteplusError("ModelArk call failed")
 
     # ---- Chat / Reasoning ----------------------------------------------
     async def chat(

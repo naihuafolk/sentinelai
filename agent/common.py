@@ -112,8 +112,8 @@ def inspect_remote(text: str, *, channel: str, action_type: str,
     }
     headers = {"X-Sentinel-Key": cfg.org_key} if cfg.org_key else {}
     try:
-        # รูป (Vision) ช้ากว่าข้อความมาก — ให้เวลามากขึ้น
-        r = httpx.post(f"{cfg.api}/inspect", json=payload, headers=headers, timeout=60 if images else 15)
+        # รูป (Vision) ช้ากว่าข้อความมาก + เผื่อ retry ฝั่งเซิร์ฟเวอร์ — ให้เวลามากขึ้น
+        r = httpx.post(f"{cfg.api}/inspect", json=payload, headers=headers, timeout=90 if images else 30)
         if r.status_code == 200:
             return r.json()
     except Exception:
