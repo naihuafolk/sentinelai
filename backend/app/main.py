@@ -27,12 +27,12 @@ from .classifier.fingerprint import get_index
 from .config import settings
 from .policy.db_bridge import invalidate as invalidate_policies
 from .schemas import (
-    AuthResponse, ClassifyOnlyResponse, DeviceOut, EventPage, FingerprintOut, Health,
+    AuthResponse, ClassifyOnlyResponse, EventPage, FingerprintOut, Health,
     CheckoutRequest, InspectRequest, InspectResponse, Label, LicenseUpdate, LoginRequest,
     OrgAdminOut, OrgOut, Policy, PolicyCreate, ResponseScanRequest, ResponseScanResult,
     SignupRequest, SimulateRequest, Stats, UserOut,
 )
-from .seed import ensure_defaults, register_sample_fingerprints, seed_demo, seed_org_defaults
+from .seed import ensure_defaults, seed_org_defaults
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("sentinel")
@@ -316,22 +316,6 @@ async def health(check_ai: bool = False):
                   models={"reasoning": settings.model_reasoning, "fast": settings.model_fast,
                           "vision": settings.model_vision, "embedding": settings.model_embedding},
                   default_mode=settings.default_mode, total_events=db.count_events())
-
-
-@app.post(f"{API}/admin/seed-demo", tags=["system"])
-async def admin_seed_demo(ctx: dict = Depends(auth.get_current_user)):
-    org_id = ctx["org"]["id"]
-    if not db.get_fingerprints(org_id):
-        register_sample_fingerprints(org_id)
-    n = seed_demo(org_id)
-    return {"seeded_events": n, "fingerprints": len(db.get_fingerprints(org_id))}
-
-
-# ============================ Devices (org, login) ===================
-@app.get(f"{API}/devices", response_model=list[DeviceOut], tags=["audit"])
-async def list_org_devices(ctx: dict = Depends(auth.get_current_user)):
-    """อุปกรณ์ที่ติดตั้งในองค์กร (เบราว์เซอร์/คอม) — เห็นว่าเครื่องไหนติดตั้งแล้ว."""
-    return db.list_devices(ctx["org"]["id"])
 
 
 # ============================ Super Admin (platform owner) ============
