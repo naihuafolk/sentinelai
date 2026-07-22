@@ -38,9 +38,10 @@ async def inspect(req: InspectRequest, org_id: int = 1) -> InspectResponse:
             action = Action.BLOCK
             redacted_text = None
 
-    # ---- Safe Rewrite (ปกป้องแต่ไม่ขวางงาน) — เมื่อเสี่ยงและเปิด AI ----
+    # ---- Safe Rewrite (ปกป้องแต่ไม่ขวางงาน) — เฉพาะเคสที่ AI ทำงานอยู่แล้ว ----
+    # (ข้อมูลชัดจาก Regex/fast-path มี redacted_text พอแล้ว ไม่ต้องเรียก AI ช้าซ้ำ = กัน Agent timeout)
     rewrite = None
-    if settings.ai_enabled and action in (Action.WARN, Action.REDACT, Action.BLOCK) \
+    if settings.ai_enabled and cls.ai_used and action in (Action.WARN, Action.REDACT, Action.BLOCK) \
             and cls.risk_score >= 30 and not req.dry_run:
         try:
             rewrite = await safe_rewrite(req.text, cls)
