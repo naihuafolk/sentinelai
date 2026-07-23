@@ -14,10 +14,29 @@ const DEFAULTS = {
   failOpen: true,
 };
 
-async function getCfg() {
+// อ่านค่านโยบายองค์กร (ตั้งผ่าน Group Policy / Google Admin) — ผู้ใช้แก้ไม่ได้
+function getManaged() {
   return new Promise((resolve) => {
-    chrome.storage.local.get(DEFAULTS, (v) => resolve(Object.assign({}, DEFAULTS, v || {})));
+    try {
+      chrome.storage.managed.get(null, (v) =>
+        resolve(!chrome.runtime.lastError && v ? v : {}));
+    } catch (e) { resolve({}); }
   });
+}
+
+async function getCfg() {
+  const [local, managed] = await Promise.all([
+    new Promise((r) => chrome.storage.local.get(DEFAULTS, (v) => r(v || {}))),
+    getManaged(),
+  ]);
+  // นโยบายองค์กร (managed) มีอำนาจเหนือค่าที่ผู้ใช้ตั้งเอง (local) — ปิด/แก้ไม่ได้
+  const cfg = Object.assign({}, DEFAULTS, local, managed);
+  cfg.enforced = managed.enforced === true;
+  if (cfg.enforced) {
+    cfg.enabled = managed.enabled !== false;                    // บังคับเปิด (เว้นแอดมินสั่งปิดเอง)
+    cfg.failOpen = managed.failOpen === true;                   // โหมดบังคับ = fail-closed เป็นค่าเริ่มต้น
+  }
+  return cfg;
 }
 
 function apiBase(cfg) {

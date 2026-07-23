@@ -19,12 +19,31 @@
     failOpen: true, // เชื่อม backend ไม่ได้ = ปล่อยผ่าน (ไม่ขวางงาน) + เตือน
   };
 
+  cfg.enforced = false;   // โหมดบังคับโดยองค์กร (ตั้งผ่านนโยบาย — ผู้ใช้ปิดไม่ได้)
+  let _local = {};        // ค่าที่ผู้ใช้ตั้งเอง
+  let _managed = {};      // ค่านโยบายองค์กร (ชนะเสมอ)
+
+  // managed ทับ local เสมอ — ป้องกันผู้ใช้แก้ค่าเพื่อเลี่ยงการป้องกัน
+  function recompute() {
+    Object.assign(cfg, _local);
+    if (_managed.backendUrl !== undefined) cfg.backendUrl = _managed.backendUrl;
+    if (_managed.orgKey !== undefined) cfg.orgKey = _managed.orgKey;
+    cfg.enforced = _managed.enforced === true;
+    if (cfg.enforced) {
+      cfg.enabled = _managed.enabled !== false;   // บังคับเปิด แม้ผู้ใช้จะกดปิด local
+      cfg.failOpen = _managed.failOpen === true;  // บังคับ fail-closed เว้นแอดมินอนุญาต
+    }
+  }
+
   // โหลด/ติดตามการตั้งค่า
   try {
-    chrome.storage.local.get(cfg, (v) => Object.assign(cfg, v || {}));
+    chrome.storage.local.get(cfg, (v) => { _local = v || {}; recompute(); });
+    try { chrome.storage.managed.get(null, (m) => { _managed = m || {}; recompute(); }); } catch (e) {}
     chrome.storage.onChanged.addListener((changes, area) => {
-      if (area !== "local") return;
-      for (const k in changes) if (k in cfg) cfg[k] = changes[k].newValue;
+      if (area === "local") { for (const k in changes) _local[k] = changes[k].newValue; }
+      else if (area === "managed") { for (const k in changes) _managed[k] = changes[k].newValue; }
+      else return;
+      recompute();
     });
   } catch (e) { /* storage อาจไม่พร้อมในบางเฟรม */ }
 
@@ -133,8 +152,7 @@
       if (res && res.ok) return res.data;
       throw new Error(res && res.error ? res.error : "no response");
     } catch (e) {
-      if (OV) OV.toast("เชื่อมต่อเซิร์ฟเวอร์ SentinelAI ไม่ได้ — ปล่อยผ่านชั่วคราว", "err");
-      return null; // fail-open
+      return null; // ตัดสินที่ผู้เรียกตาม cfg.failOpen (ปล่อยผ่าน หรือ หยุดไว้ก่อน)
     }
   }
 
@@ -146,7 +164,15 @@
     inFlight = true;
     const result = await inspect(text, "submit");
     inFlight = false;
-    if (!result) { reallySend(editor); return; } // fail-open
+    if (!result) {                               // เชื่อมต่อเซิร์ฟเวอร์ไม่ได้
+      if (cfg.failOpen) {                         // โหมดปกติ: ปล่อยผ่าน + เตือน
+        if (OV) OV.toast("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ — ปล่อยผ่านชั่วคราว", "err");
+        reallySend(editor);
+      } else if (OV) {                            // โหมดบังคับ (fail-closed): หยุดไว้ก่อน
+        OV.toast("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ — โหมดบังคับ: หยุดส่งไว้ก่อน 🔒", "err");
+      }
+      return;
+    }
 
     const d = result.decision;
     const c = result.classification || {};
@@ -177,7 +203,15 @@
 
   async function enforcePaste(editor, pastedText, images) {
     const result = await inspect(pastedText, "paste", images);
-    if (!result) { if (pastedText) insertAtCaret(editor, pastedText); return; }
+    if (!result) {                               // เชื่อมต่อเซิร์ฟเวอร์ไม่ได้
+      if (cfg.failOpen) {                         // โหมดปกติ: ปล่อยผ่าน + เตือน
+        if (OV) OV.toast("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ — ปล่อยผ่านชั่วคราว", "err");
+        if (pastedText) insertAtCaret(editor, pastedText);
+      } else if (OV) {                            // โหมดบังคับ (fail-closed): ไม่วางข้อมูล
+        OV.toast("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ — โหมดบังคับ: ไม่วางข้อมูล 🔒", "err");
+      }
+      return;
+    }
     const d = result.decision;
     const c = result.classification || {};
 

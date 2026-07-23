@@ -29,6 +29,29 @@ async function init() {
     renderKey(!!(v.orgKey && v.orgKey.trim()));
   });
 
+  // นโยบายองค์กร (Group Policy / Google Admin) — ล็อกไม่ให้ผู้ใช้ปิดหรือแก้
+  try {
+    chrome.storage.managed.get(null, (m) => {
+      m = (!chrome.runtime.lastError && m) ? m : {};
+      if (m.enforced === true) {
+        const sw = $("enabled");
+        sw.checked = m.enabled !== false;
+        sw.disabled = true;
+        const lock = document.createElement("div");
+        lock.className = "lockbar";
+        lock.textContent = "🔒 บังคับใช้งานโดยผู้ดูแลระบบ — ปิดไม่ได้";
+        $("conn").after(lock);
+      }
+      if (m.orgKey) {
+        $("orgKey").value = m.orgKey;
+        renderKey(true);
+        const done = $("keyDone").querySelector("span");
+        if (done) done.textContent = "🔒 คีย์ตั้งค่าโดยผู้ดูแลระบบ";
+        $("editKey").hidden = true;
+      }
+    });
+  } catch (e) { /* ไม่มีนโยบาย = โหมดติดตั้งเอง ปกติ */ }
+
   $("enabled").addEventListener("change", (e) => {
     chrome.storage.local.set({ enabled: e.target.checked });
   });

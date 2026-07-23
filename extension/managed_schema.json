@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "properties": {
+    "enforced": {
+      "title": "บังคับใช้งาน — ผู้ใช้ปิด/แก้ไขไม่ได้ (ต้องตั้งผ่านนโยบายองค์กร)",
+      "type": "boolean"
+    },
+    "enabled": {
+      "title": "เปิดการป้องกัน",
+      "type": "boolean"
+    },
+    "failOpen": {
+      "title": "เมื่อเซิร์ฟเวอร์ล่ม: true = ปล่อยผ่าน, false = บล็อกไว้ก่อน (แนะนำ false ในโหมดบังคับ)",
+      "type": "boolean"
+    },
+    "backendUrl": {
+      "title": "ที่อยู่เซิร์ฟเวอร์ SentinelAI (ล็อกโดยองค์กร)",
+      "type": "string"
+    },
+    "orgKey": {
+      "title": "คีย์องค์กร (ล็อกโดยองค์กร — พนักงานไม่ต้องกรอกเอง)",
+      "type": "string"
+    }
+  }
+}
