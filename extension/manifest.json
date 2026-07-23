@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "SentinelAI — AI Data Loss Prevention",
   "version": "1.0.0",
-  "description": "ดักจับและป้องกันข้อมูลลับองค์กรก่อนถูกส่งไปยัง ChatGPT, Gemini, Claude, Copilot, DeepSeek — ขับเคลื่อนด้วย BytePlus ModelArk",
+  "description": "ดักจับและป้องกันข้อมูลลับองค์กร (เลขบัตร, บัตร ปชช., คีย์ลับ, เอกสารลับ) ก่อนถูกส่งไปยัง ChatGPT, Gemini, Claude, Copilot, DeepSeek",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",

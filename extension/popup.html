@@ -23,6 +23,22 @@
     <span id="connText">กำลังเชื่อมต่อ…</span>
   </div>
 
+  <!-- ใส่คีย์องค์กรครั้งเดียว (ขั้นตอนเดียวที่ต้องทำ) -->
+  <div class="keybox" id="keyBox">
+    <!-- กรณีตั้งค่าแล้ว: แสดงแบบย่อ -->
+    <div class="keydone" id="keyDone" hidden>
+      <span>✓ เชื่อมกับองค์กรเรียบร้อย</span>
+      <button type="button" class="link" id="editKey">เปลี่ยนคีย์</button>
+    </div>
+    <!-- กรณียังไม่ตั้งค่า: ช่องใส่คีย์ -->
+    <div class="keyform" id="keyForm">
+      <label class="keylabel">🔑 วางคีย์องค์กร (Org Key)</label>
+      <input type="text" id="orgKey" placeholder="วางคีย์ที่นี่…" autocomplete="off" spellcheck="false" />
+      <button class="btn primary full" id="saveKey">บันทึก & เชื่อมต่อ</button>
+      <div class="keyhint">คัดลอกจากเว็บ → แท็บ “ตั้งค่า” → ปุ่มคัดลอก Org Key</div>
+    </div>
+  </div>
+
   <div class="grid">
     <div class="stat"><div class="num" id="det">–</div><div class="lbl">ตรวจพบ (30 วัน)</div></div>
     <div class="stat"><div class="num" id="blk">–</div><div class="lbl">บล็อกการรั่วไหล</div></div>
@@ -30,15 +46,15 @@
 
   <div class="airow" id="airow">
     <span class="ai-dot" id="aiDot"></span>
-    <span id="aiText">โมเดล AI: …</span>
+    <span id="aiText">ระบบ AI: …</span>
   </div>
 
   <div class="actions">
     <button id="openDash" class="btn primary">เปิดแดชบอร์ด</button>
-    <button id="openOpts" class="btn ghost">ตั้งค่า</button>
+    <button id="openOpts" class="btn ghost">ตั้งค่าเพิ่มเติม</button>
   </div>
 
-  <div class="foot">เวอร์ชัน <span id="ver">1.0</span> • ขับเคลื่อนด้วย BytePlus ModelArk</div>
+  <div class="foot">เวอร์ชัน <span id="ver">1.0</span></div>
 
   <script src="popup.js"></script>
 </body>

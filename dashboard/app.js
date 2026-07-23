@@ -346,7 +346,7 @@ function renderAuth(tab = "login") {
           <article class="lp-feat">
             <div class="lp-feat-ico" aria-hidden="true">🧠</div>
             <h3 class="lp-feat-t">ตรวจ 3 ชั้น</h3>
-            <p class="lp-feat-d">Regex + Fingerprint + AI (BytePlus) วิเคราะห์บริบทเชิงลึกอย่างแม่นยำ</p>
+            <p class="lp-feat-d">Regex + Fingerprint + AI วิเคราะห์บริบทเชิงลึกอย่างแม่นยำ</p>
           </article>
           <article class="lp-feat">
             <div class="lp-feat-ico" aria-hidden="true">🔒</div>
@@ -1287,7 +1287,7 @@ async function renderSimulator() {
         <div class="row" style="margin-top:14px">
           <div class="field"><label>ช่องทาง</label><select id="sim-chan">${CHANNELS.map((c) => `<option value="${c}" ${c === "chatgpt" ? "selected" : ""}>${chDisplay(c)}</option>`).join("")}</select></div>
           <div class="field"><label>แผนก</label><input type="text" id="sim-dept" placeholder="เช่น การเงิน"></div>
-          <div class="field"><label>ใช้ AI (BytePlus)</label><select id="sim-ai"><option value="">ตามค่าระบบ (auto)</option><option value="true">เปิด</option><option value="false">ปิด</option></select></div>
+          <div class="field"><label>ใช้ AI</label><select id="sim-ai"><option value="">ตามค่าระบบ (auto)</option><option value="true">เปิด</option><option value="false">ปิด</option></select></div>
         </div>
         <button class="btn btn-primary btn-block" id="sim-run" style="margin-top:6px"><span class="ico">🔍</span> ตรวจสอบ</button>
         ${aiOn === false ? '<div class="hint" style="margin-top:10px">⚠️ ยังไม่ได้ตั้งค่า ARK_API_KEY — ระบบใช้เครื่องยนต์ Regex/Fingerprint (การเลือก "เปิด AI" จะไม่มีผล)</div>' : ""}
@@ -1768,7 +1768,7 @@ async function loadBilling() {
 }
 
 async function renderSettings() {
-  setView(pageHead("ตั้งค่า & เชื่อมต่อ", "คีย์ API ขององค์กร, สถานะการเชื่อมต่อ AI (BytePlus ModelArk) และเครื่องมือ") + `<div id="set-body">${loadingBlock()}</div>`);
+  setView(pageHead("ตั้งค่า & เชื่อมต่อ", "คีย์ API ขององค์กร, สถานะการเชื่อมต่อระบบ AI และเครื่องมือ") + `<div id="set-body">${loadingBlock()}</div>`);
   let cfg, health, org;
   try {
     [cfg, health] = await Promise.all([api.get("/config"), api.get("/health")]);
@@ -1824,7 +1824,7 @@ async function renderSettings() {
     <!-- สถานะ AI -->
     <div class="status-hero ${on ? "on" : "off"}" style="margin-bottom:16px">
       <div class="sh-ico">${on ? "✅" : "⚠️"}</div>
-      <div><div class="sh-t">${on ? "เชื่อมต่อ BytePlus ModelArk แล้ว" : "ยังไม่ได้ตั้งค่า ARK_API_KEY — กำลังใช้ Regex/Fingerprint"}</div>
+      <div><div class="sh-t">${on ? "ระบบ AI พร้อมป้องกันแล้ว" : "ยังไม่ได้ตั้งค่าคีย์ AI — กำลังใช้ Regex/Fingerprint"}</div>
       <div class="sh-d">${on ? "เปิดใช้งาน AI Semantic Understanding สำหรับตรวจบริบทเชิงความหมาย" : "ระบบทำงานได้ 100% ด้วยเครื่องยนต์ในเครื่อง — ใส่คีย์ใน .env เพื่อเปิด AI"}</div></div>
       <div style="margin-left:auto"><button class="btn ${on ? "btn-primary" : "btn-ghost"}" id="btn-ping" ${on ? "" : "disabled"}>ทดสอบ AI</button><div class="micro" id="ping-out" style="margin-top:6px;text-align:right"></div></div>
     </div>
@@ -1873,7 +1873,7 @@ async function renderSettings() {
     const b = e.currentTarget, out = $("#ping-out"); b.disabled = true; const oo = b.innerHTML; b.innerHTML = '<span class="spinner"></span> กำลังทดสอบ…'; out.textContent = "";
     try {
       const h = await api.get("/health?check_ai=true");
-      out.innerHTML = h.ark_reachable ? '<span style="color:var(--accent-2)">✅ เชื่อมต่อ ModelArk สำเร็จ</span>' : '<span style="color:#ff9a9a">⛔ เชื่อมต่อไม่สำเร็จ (ตรวจสอบคีย์/เครือข่าย)</span>';
+      out.innerHTML = h.ark_reachable ? '<span style="color:var(--accent-2)">✅ เชื่อมต่อระบบ AI สำเร็จ</span>' : '<span style="color:#ff9a9a">⛔ เชื่อมต่อไม่สำเร็จ (ตรวจสอบคีย์/เครือข่าย)</span>';
     } catch (err) { if (err.status !== 401) out.innerHTML = '<span style="color:#ff9a9a">⛔ ' + esc(err.message) + "</span>"; }
     finally { b.disabled = false; b.innerHTML = oo; }
   });

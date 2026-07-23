@@ -1,7 +1,7 @@
 /* options.js — บันทึกการตั้งค่าลง chrome.storage.local */
 const DEFAULTS = {
   enabled: true,
-  backendUrl: "http://127.0.0.1:8000",
+  backendUrl: "https://sentinelai.help",
   orgKey: "",
   user: "unknown",
   department: "",
