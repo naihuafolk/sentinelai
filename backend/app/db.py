@@ -44,8 +44,9 @@ CREATE TABLE IF NOT EXISTS orgs (
     valid_until TEXT,                      -- วันหมดอายุ license (ISO)
     stripe_customer_id TEXT,              -- ลูกค้าใน Stripe (สำหรับจ่ายเงินอัตโนมัติ)
     stripe_subscription_id TEXT,
-    line_token TEXT,                      -- LINE Messaging API channel access token (แจ้งเตือน)
-    line_to TEXT,                         -- ปลายทางแจ้งเตือน (userId/groupId)
+    line_token TEXT,                      -- (ขั้นสูง) channel access token บอทของลูกค้าเอง — เว้นว่าง = ใช้บอทกลาง
+    line_to TEXT,                         -- ปลายทางแจ้งเตือน (userId/groupId) — เติมอัตโนมัติเมื่อเชื่อมผ่านบอทกลาง
+    line_link_code TEXT,                  -- โค้ดเชื่อม LINE ชั่วคราว (ส่งให้บอทกลางเพื่อผูก userId)
     alert_min_risk INTEGER DEFAULT 70,    -- แจ้งเตือนเมื่อความเสี่ยง >= ค่านี้
     alert_enabled INTEGER DEFAULT 0,      -- เปิด/ปิดการแจ้งเตือน LINE
     created_at TEXT
@@ -117,7 +118,7 @@ def init_db() -> None:
         for col, ddl in (("seats", "INTEGER DEFAULT 5"), ("status", "TEXT DEFAULT 'trial'"),
                          ("quota_month", "INTEGER DEFAULT 2000"), ("valid_until", "TEXT"),
                          ("stripe_customer_id", "TEXT"), ("stripe_subscription_id", "TEXT"),
-                         ("line_token", "TEXT"), ("line_to", "TEXT"),
+                         ("line_token", "TEXT"), ("line_to", "TEXT"), ("line_link_code", "TEXT"),
                          ("alert_min_risk", "INTEGER DEFAULT 70"), ("alert_enabled", "INTEGER DEFAULT 0")):
             try:
                 if not _has_column(conn, "orgs", col):
@@ -198,6 +199,22 @@ def set_org_notify(org_id: int, *, line_token=None, line_to=None,
         cur = conn.execute(f"UPDATE orgs SET {', '.join(sets)} WHERE id=?", params)
         conn.commit()
         return cur.rowcount > 0
+
+
+def set_line_link_code(org_id: int, code: Optional[str]) -> None:
+    with _lock:
+        conn = _connect()
+        conn.execute("UPDATE orgs SET line_link_code=? WHERE id=?", (code or None, org_id))
+        conn.commit()
+
+
+def get_org_by_line_link_code(code: str) -> Optional[dict]:
+    code = (code or "").strip()
+    if len(code) < 4:   # กันจับคีย์ว่าง/สั้นเกินไปโดยไม่ตั้งใจ
+        return None
+    with _lock:
+        r = _connect().execute("SELECT * FROM orgs WHERE line_link_code=?", (code,)).fetchone()
+    return dict(r) if r else None
 
 
 def count_orgs() -> int:

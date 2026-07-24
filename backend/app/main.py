@@ -9,8 +9,12 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import logging
+import secrets
+import string
 import zipfile
+from urllib.parse import quote
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path as _Path
@@ -347,6 +351,77 @@ async def test_notify(ctx: dict = Depends(auth.get_current_user)):
     org = db.get_org(ctx["org"]["id"]) or ctx["org"]
     ok, detail = await line_alert.send_test(org)
     return {"ok": ok, "detail": detail}
+
+
+@app.get(f"{API}/notify/line-link", tags=["system"])
+async def notify_line_link(ctx: dict = Depends(auth.get_current_user)):
+    """โหมดง่าย: คืนโค้ดเชื่อม + ลิงก์แอดบอทกลาง/ส่งโค้ด (ลูกค้าไม่ต้องมี token เอง)."""
+    org = db.get_org(ctx["org"]["id"]) or ctx["org"]
+    code = (org.get("line_link_code") or "").strip()
+    if not code:
+        code = "SN" + "".join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(6))
+        db.set_line_link_code(org["id"], code)
+    bot = settings.line_bot_id
+    add_url = f"https://line.me/R/ti/p/{quote(bot)}" if bot else ""
+    deep_link = f"https://line.me/R/oaMessage/{quote(bot)}/?{quote('เชื่อม ' + code)}" if bot else ""
+    return {
+        "central_enabled": settings.line_central_enabled,
+        "bot_id": bot,
+        "code": code,
+        "add_url": add_url,
+        "deep_link": deep_link,
+        "linked": bool((org.get("line_to") or "").strip()),
+    }
+
+
+async def _handle_line_event(ev: dict) -> None:
+    etype = ev.get("type")
+    reply_token = ev.get("replyToken")
+    user_id = (ev.get("source") or {}).get("userId")
+    if etype == "follow":
+        await line_alert.reply(
+            reply_token,
+            "สวัสดีครับ 🛡️ นี่คือบอทแจ้งเตือน SentinelAI\n"
+            "เปิดแดชบอร์ด → ตั้งค่า → กด “เชื่อม LINE” แล้วส่งโค้ดที่ได้มาที่แชทนี้ "
+            "เพื่อผูกองค์กรของคุณ",
+        )
+        return
+    if etype == "message" and (ev.get("message") or {}).get("type") == "text":
+        text = (ev["message"].get("text") or "").strip()
+        candidate = text.replace("เชื่อม", "").strip().upper()
+        org = db.get_org_by_line_link_code(candidate) or db.get_org_by_line_link_code(text.upper())
+        if org and user_id:
+            db.set_org_notify(org["id"], line_to=user_id, alert_enabled=1)
+            db.set_line_link_code(org["id"], None)   # ใช้แล้วเคลียร์กันเชื่อมซ้ำ
+            await line_alert.reply(
+                reply_token,
+                f"✅ เชื่อมสำเร็จ!\nองค์กร: {org.get('name', '')}\n"
+                "จากนี้การแจ้งเตือนความเสี่ยงจะส่งมาที่แชทนี้ 🛡️",
+            )
+        else:
+            await line_alert.reply(
+                reply_token,
+                "ไม่พบรหัสเชื่อม 🤔\nกรุณาคัดลอกโค้ดจากแดชบอร์ด SentinelAI "
+                "(ปุ่ม “เชื่อม LINE”) แล้วส่งมาใหม่",
+            )
+
+
+@app.post(f"{API}/line/webhook", tags=["system"])
+async def line_webhook(request: Request):
+    """รับ event จาก LINE (แอดบอท/ส่งโค้ดเชื่อม) — endpoint สาธารณะ ตรวจด้วยลายเซ็น."""
+    body = await request.body()
+    if not line_alert.verify_signature(body, request.headers.get("x-line-signature", "")):
+        raise HTTPException(403, "bad signature")
+    try:
+        data = json.loads(body or b"{}")
+    except Exception:
+        return {"ok": True}
+    for ev in data.get("events", []):
+        try:
+            await _handle_line_event(ev)
+        except Exception as e:  # ห้ามให้ webhook ล้ม (LINE จะ retry)
+            log.warning("line webhook event error: %s", e)
+    return {"ok": True}
 
 
 @app.get(f"{API}/health", response_model=Health, tags=["system"])

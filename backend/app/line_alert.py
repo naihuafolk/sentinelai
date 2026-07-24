@@ -11,17 +11,49 @@ line_alert.py — แจ้งเตือนเข้า LINE ทันที�
 """
 from __future__ import annotations
 
+import base64
+import hashlib
+import hmac
 import logging
 from typing import Any
 
 import httpx
 
 from . import db
+from .config import settings
 
 log = logging.getLogger("sentinel.line")
 
 _PUSH_URL = "https://api.line.me/v2/bot/message/push"
+_REPLY_URL = "https://api.line.me/v2/bot/message/reply"
 _DECISION_TH = {"block": "⛔ บล็อก", "redact": "🛡️ ปิดบัง", "warn": "⚠️ เตือน", "monitor": "👁️ บันทึก"}
+
+
+def _token_for(org: dict) -> str:
+    """ใช้ token บอทของลูกค้าเองถ้ามี (ขั้นสูง) ไม่งั้นใช้บอทกลางของ SentinelAI."""
+    return (org.get("line_token") or "").strip() or settings.line_token
+
+
+def verify_signature(body: bytes, signature: str) -> bool:
+    """ตรวจลายเซ็น webhook จาก LINE (ข้ามถ้ายังไม่ตั้ง channel secret)."""
+    if not settings.line_secret:
+        return True
+    mac = hmac.new(settings.line_secret.encode(), body, hashlib.sha256).digest()
+    return hmac.compare_digest(base64.b64encode(mac).decode(), signature or "")
+
+
+async def reply(reply_token: str, text: str) -> None:
+    """ตอบกลับข้อความในแชท (ใช้ตอนเชื่อมบัญชี) — ใช้ token บอทกลาง."""
+    token = settings.line_token
+    if not token or not reply_token:
+        return
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    body = {"replyToken": reply_token, "messages": [{"type": "text", "text": text[:4900]}]}
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            await client.post(_REPLY_URL, headers=headers, json=body)
+    except Exception as e:  # pragma: no cover
+        log.warning("LINE reply failed: %s", e)
 
 
 async def _push(token: str, to: str, text: str) -> tuple[bool, str]:
@@ -65,7 +97,7 @@ async def maybe_alert(org_id: int, ev: dict[str, Any]) -> None:
         org = db.get_org(org_id)
         if not org or not org.get("alert_enabled"):
             return
-        token = (org.get("line_token") or "").strip()
+        token = _token_for(org)
         to = (org.get("line_to") or "").strip()
         if not token or not to:
             return
@@ -80,10 +112,12 @@ async def maybe_alert(org_id: int, ev: dict[str, Any]) -> None:
 
 async def send_test(org: dict) -> tuple[bool, str]:
     """ส่งข้อความทดสอบ (ปุ่ม 'ส่งทดสอบ' ในแดชบอร์ด)."""
-    token = (org.get("line_token") or "").strip()
+    token = _token_for(org)
     to = (org.get("line_to") or "").strip()
-    if not token or not to:
-        return False, "ยังไม่ได้ตั้งค่า Token หรือ ID ผู้รับ"
+    if not token:
+        return False, "ยังไม่ได้ตั้งค่าบอท LINE (ทั้งบอทกลางและบอทของคุณ)"
+    if not to:
+        return False, "ยังไม่ได้เชื่อม LINE — กรุณาแอดบอทและส่งโค้ดเชื่อมก่อน"
     return await _push(
         token, to,
         f"✅ ทดสอบการแจ้งเตือน SentinelAI สำเร็จ\n"

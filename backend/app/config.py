@@ -71,6 +71,16 @@ class Settings:
     stripe_price_business: str = os.getenv("STRIPE_PRICE_BUSINESS", "").strip()
     public_base_url: str = os.getenv("SENTINEL_PUBLIC_URL", "https://sentinelai.help").rstrip("/")
 
+    # LINE แจ้งเตือน — "บอทกลาง" ของ SentinelAI (ตั้งครั้งเดียวที่เซิร์ฟเวอร์)
+    # ลูกค้าแค่แอดบอทแล้วส่งโค้ดเชื่อม ไม่ต้องมี token/ID ของตัวเอง
+    line_token: str = os.getenv("SENTINEL_LINE_TOKEN", "").strip()      # channel access token (บอทกลาง)
+    line_secret: str = os.getenv("SENTINEL_LINE_SECRET", "").strip()    # channel secret (ตรวจลายเซ็น webhook)
+    line_bot_id: str = os.getenv("SENTINEL_LINE_BOT_ID", "").strip()    # basic id เช่น @sentinelai (ลิงก์แอด/เชื่อม)
+
+    @property
+    def line_central_enabled(self) -> bool:
+        return bool(self.line_token)
+
     @property
     def billing_enabled(self) -> bool:
         return bool(self.stripe_secret_key)
@@ -101,6 +111,8 @@ class Settings:
             "ai_risk_threshold": self.ai_risk_threshold,
             "store_content": self.store_content,
             "billing_enabled": self.billing_enabled,
+            "line_central_enabled": self.line_central_enabled,
+            "line_bot_id": self.line_bot_id,
             "models": {
                 "reasoning": self.model_reasoning,
                 "fast": self.model_fast,

@@ -1891,57 +1891,104 @@ async function renderSettings() {
 async function loadNotify() {
   const box = $("#notify-body");
   if (!box) return;
-  let n;
-  try { n = await api.get("/notify"); }
+  let n, link;
+  try { [n, link] = await Promise.all([api.get("/notify"), api.get("/notify/line-link")]); }
   catch (e) { if (e.status !== 401) box.innerHTML = '<p class="micro" style="color:#ff9a9a">โหลดค่าไม่สำเร็จ</p>'; return; }
 
   const inp = "width:100%;padding:9px 11px;background:#0b1220;border:1px solid #2a3a4f;border-radius:8px;color:#e6edf5;font-size:13px";
   const lbl = "display:block;font-size:12px;font-weight:600;color:#b8c4d4;margin:0 0 5px";
-  box.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:14px;max-width:580px">
+
+  // ---------- โหมดง่าย: บอทกลางของ SentinelAI ----------
+  let easy;
+  if (!link.central_enabled) {
+    easy = `<div class="pdpa-note" style="background:#1e1b0b;border-color:#a16207">⚠️ <div>ผู้ดูแลระบบยังไม่ได้ตั้งค่า “บอทกลาง” — ใช้โหมดบอทของคุณเองด้านล่างได้เลย</div></div>`;
+  } else if (link.linked) {
+    easy = `
+      <div style="background:#0b1f16;border:1px solid #14532d;border-radius:12px;padding:16px">
+        <div style="font-size:15px;font-weight:700;color:#34d399">✅ เชื่อม LINE เรียบร้อยแล้ว</div>
+        <div class="micro" style="margin:4px 0 12px">การแจ้งเตือนความเสี่ยงจะส่งเข้า LINE ที่เชื่อมไว้</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <button class="btn btn-primary" id="nf-test">ส่งข้อความทดสอบ</button>
+          <button class="btn btn-ghost" id="nf-unlink">ยกเลิกการเชื่อม</button>
+          <span class="micro" id="nf-out"></span>
+        </div>
+      </div>`;
+  } else {
+    const addBtn = link.add_url ? `<a class="btn btn-ghost" href="${esc(link.add_url)}" target="_blank" rel="noopener">➕ แอดบอท SentinelAI</a>` : "";
+    const sendBtn = link.deep_link ? `<a class="btn btn-primary" href="${esc(link.deep_link)}" target="_blank" rel="noopener">🔗 ส่งโค้ดเชื่อม (เปิด LINE)</a>` : "";
+    easy = `
+      <div style="background:#0b1220;border:1px solid #26364a;border-radius:12px;padding:16px">
+        <div style="font-size:14px;font-weight:700;color:#e6edf5;margin-bottom:10px">เชื่อม LINE แบบง่าย (แนะนำ) — ลูกค้าไม่ต้องมี token เอง</div>
+        <ol style="margin:0 0 12px 18px;padding:0;font-size:13px;color:#cbd5e1;line-height:1.95">
+          <li><b>แอดบอท SentinelAI</b> เป็นเพื่อนในไลน์ ${addBtn ? "(กดปุ่มด้านล่าง)" : `— ค้นหา <code style="background:#111c2e;padding:2px 6px;border-radius:5px">${esc(link.bot_id || "@sentinelai")}</code>`}</li>
+          <li>กด <b>ส่งโค้ดเชื่อม</b> (เปิด LINE พร้อมข้อความ กดส่งได้เลย)<br>
+            <span class="micro">หรือพิมพ์เองในแชทบอท: <code style="background:#111c2e;padding:2px 6px;border-radius:5px">เชื่อม ${esc(link.code)}</code></span></li>
+          <li>บอทตอบ “เชื่อมสำเร็จ ✅” แล้วกด <b>ฉันเชื่อมแล้ว</b></li>
+        </ol>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          ${addBtn}${sendBtn}
+          <button class="btn btn-ghost" id="nf-refresh">🔄 ฉันเชื่อมแล้ว</button>
+          <span class="micro" id="nf-out"></span>
+        </div>
+      </div>`;
+  }
+
+  // ---------- ตั้งค่าเกณฑ์ + เปิด/ปิด ----------
+  const settingsBlock = `
+    <div style="display:flex;flex-direction:column;gap:12px;max-width:560px;margin-top:14px">
       <label style="display:flex;align-items:center;gap:9px;font-size:14px;cursor:pointer">
         <input type="checkbox" id="nf-on" ${n.enabled ? "checked" : ""} style="width:17px;height:17px;accent-color:#10b981"/>
-        <span>เปิดการแจ้งเตือนเข้า LINE</span>
+        <span>เปิดการแจ้งเตือน</span>
       </label>
-      <div><label style="${lbl}">Channel access token (LINE Messaging API)</label>
-        <input id="nf-token" type="password" autocomplete="off" style="${inp}"
-          placeholder="${n.has_token ? '•••••• มีคีย์อยู่แล้ว — เว้นว่างถ้าไม่เปลี่ยน' : 'วาง Channel access token ที่นี่'}"/></div>
-      <div><label style="${lbl}">ID ผู้รับ (userId หรือ groupId)</label>
-        <input id="nf-to" value="${esc(n.to || "")}" style="${inp}" placeholder="Uxxxxxxxx… หรือ Cxxxxxxxx…"/></div>
       <div><label style="${lbl}">แจ้งเตือนเมื่อความเสี่ยง ≥ (1–100)</label>
         <input id="nf-risk" type="number" min="1" max="100" value="${n.min_risk || 70}" style="${inp};max-width:130px"/></div>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <button class="btn btn-primary" id="nf-save">บันทึก</button>
-        <button class="btn btn-ghost" id="nf-test">ส่งข้อความทดสอบ</button>
-        <span class="micro" id="nf-out"></span>
-      </div>
-      <div class="pdpa-note">💡 <div><b>วิธีได้ค่า:</b> สร้าง <b>LINE Official Account</b> → เปิด <b>Messaging API</b> ใน LINE Developers → คัดลอก <b>Channel access token</b>. ส่วน <b>ID ผู้รับ</b> คือ userId/groupId ที่ให้รับแจ้งเตือน (เพิ่มบอทเป็นเพื่อน/เข้ากลุ่มก่อน)</div></div>
+      <div><button class="btn btn-primary" id="nf-save">บันทึกการตั้งค่า</button> <span class="micro" id="nf-out2"></span></div>
     </div>`;
 
-  $("#nf-save")?.addEventListener("click", async () => {
-    const out = $("#nf-out"); out.textContent = "กำลังบันทึก…";
-    try {
-      await api.post("/notify", {
-        enabled: $("#nf-on").checked,
-        line_token: $("#nf-token").value,
-        line_to: $("#nf-to").value.trim(),
-        min_risk: Number($("#nf-risk").value) || 70,
-      });
-      out.innerHTML = '<span style="color:var(--accent-2)">✓ บันทึกแล้ว</span>';
-      toast("บันทึกการแจ้งเตือนแล้ว", "ok");
-      loadNotify();
-    } catch (e) { out.innerHTML = '<span style="color:#ff9a9a">⛔ ' + esc(e.message || "ผิดพลาด") + "</span>"; }
-  });
+  // ---------- ขั้นสูง: บอทของตัวเอง ----------
+  const advanced = `
+    <details style="margin-top:16px">
+      <summary style="cursor:pointer;font-size:13px;color:#94a3b8">⚙️ ใช้บอท LINE ของตัวเอง (ขั้นสูง — สำหรับองค์กรใหญ่)</summary>
+      <div style="display:flex;flex-direction:column;gap:12px;max-width:560px;margin-top:12px">
+        <div><label style="${lbl}">Channel access token (บอทของคุณเอง)</label>
+          <input id="nf-token" type="password" autocomplete="off" style="${inp}"
+            placeholder="${n.has_token ? '•••••• มีคีย์อยู่แล้ว — เว้นว่างถ้าไม่เปลี่ยน' : 'วาง token (เว้นว่าง = ใช้บอทกลาง)'}"/></div>
+        <div><label style="${lbl}">ID ผู้รับ (userId/groupId)</label>
+          <input id="nf-to" value="${esc(n.to || "")}" style="${inp}" placeholder="Uxxxx… / Cxxxx…"/></div>
+        <div><button class="btn btn-ghost" id="nf-save-adv">บันทึกบอทของฉัน</button> <span class="micro" id="nf-out3"></span></div>
+      </div>
+    </details>`;
 
-  $("#nf-test")?.addEventListener("click", async (e) => {
-    const b = e.currentTarget, out = $("#nf-out"); b.disabled = true; out.textContent = "กำลังส่ง…";
+  box.innerHTML = easy + settingsBlock + advanced;
+
+  const testAlert = async (e) => {
+    const b = e.currentTarget, out = $("#nf-out"); b.disabled = true; if (out) out.textContent = "กำลังส่ง…";
     try {
       const r = await api.post("/notify/test", {});
-      out.innerHTML = r.ok
-        ? '<span style="color:var(--accent-2)">✅ ส่งเข้า LINE แล้ว — เช็คมือถือ</span>'
-        : '<span style="color:#ff9a9a">⛔ ' + esc(r.detail || "ส่งไม่สำเร็จ") + "</span>";
-    } catch (err) { out.innerHTML = '<span style="color:#ff9a9a">⛔ ' + esc(err.message || "ผิดพลาด") + "</span>"; }
+      if (out) out.innerHTML = r.ok ? '<span style="color:var(--accent-2)">✅ ส่งเข้า LINE แล้ว เช็คมือถือ</span>'
+                                    : '<span style="color:#ff9a9a">⛔ ' + esc(r.detail || "ส่งไม่สำเร็จ") + "</span>";
+    } catch (err) { if (out) out.innerHTML = '<span style="color:#ff9a9a">⛔ ' + esc(err.message || "ผิดพลาด") + "</span>"; }
     finally { b.disabled = false; }
+  };
+  $("#nf-test")?.addEventListener("click", testAlert);
+  $("#nf-refresh")?.addEventListener("click", () => loadNotify());
+  $("#nf-unlink")?.addEventListener("click", async () => {
+    try { await api.post("/notify", { enabled: false, line_to: "", min_risk: Number($("#nf-risk")?.value) || 70 }); toast("ยกเลิกการเชื่อมแล้ว", "ok"); loadNotify(); }
+    catch (e) { toast(e.message || "ผิดพลาด", "err"); }
+  });
+  $("#nf-save")?.addEventListener("click", async () => {
+    const out = $("#nf-out2"); out.textContent = "กำลังบันทึก…";
+    try {
+      await api.post("/notify", { enabled: $("#nf-on").checked, line_to: n.to || "", min_risk: Number($("#nf-risk").value) || 70 });
+      out.innerHTML = '<span style="color:var(--accent-2)">✓ บันทึกแล้ว</span>'; toast("บันทึกแล้ว", "ok");
+    } catch (e) { out.innerHTML = '<span style="color:#ff9a9a">⛔ ' + esc(e.message || "ผิดพลาด") + "</span>"; }
+  });
+  $("#nf-save-adv")?.addEventListener("click", async () => {
+    const out = $("#nf-out3"); out.textContent = "กำลังบันทึก…";
+    try {
+      await api.post("/notify", { enabled: $("#nf-on").checked, line_token: $("#nf-token").value, line_to: $("#nf-to").value.trim(), min_risk: Number($("#nf-risk").value) || 70 });
+      out.innerHTML = '<span style="color:var(--accent-2)">✓ บันทึกแล้ว</span>'; toast("บันทึกบอทของคุณแล้ว", "ok"); loadNotify();
+    } catch (e) { out.innerHTML = '<span style="color:#ff9a9a">⛔ ' + esc(e.message || "ผิดพลาด") + "</span>"; }
   });
 }
 
