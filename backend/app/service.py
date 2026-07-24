@@ -5,10 +5,11 @@ Service layer — ประกอบ Interception Flow (หัวข้อ 4 ข
 """
 from __future__ import annotations
 
+import asyncio
 import time
 import uuid
 
-from . import db
+from . import db, line_alert
 from .classifier import get_engine
 from .config import settings
 from .policy import get_policy_engine
@@ -57,7 +58,7 @@ async def inspect(req: InspectRequest, org_id: int = 1) -> InspectResponse:
         excerpt = None
         if settings.store_content:
             excerpt = (req.text or "")[:_EXCERPT_LEN]
-        db.insert_event({
+        ev = {
             "id": event_id,
             "org_id": org_id,
             "ts": db.now_iso(),
@@ -76,7 +77,14 @@ async def inspect(req: InspectRequest, org_id: int = 1) -> InspectResponse:
             "ai_used": cls.ai_used,
             "detection_types": sorted({d.type for d in cls.detections}),
             "content_excerpt": excerpt,
-        })
+        }
+        db.insert_event(ev)
+        # แจ้งเตือน LINE ทันที (best-effort, ไม่รอผล ไม่บล็อกการตอบกลับ)
+        if action != Action.ALLOW and cls.risk_score >= 50:
+            try:
+                asyncio.create_task(line_alert.maybe_alert(org_id, ev))
+            except RuntimeError:
+                pass  # ไม่มี event loop (เช่นเรียกนอก async) — ข้าม
 
     coaching = decision.coaching or None
     return InspectResponse(

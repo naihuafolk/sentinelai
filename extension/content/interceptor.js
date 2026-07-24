@@ -297,6 +297,76 @@
     }))).then((arr) => arr.filter(Boolean));
   }
 
+  // ---------- ตรวจไฟล์แนบ/ลากไฟล์ (ปุ่มแนบ 📎 + drag-drop) ----------
+  const TEXT_EXT = /\.(txt|csv|json|md|log|xml|ya?ml|ini|conf|env|sql|html?|js|jsx|ts|tsx|py|java|c|cpp|cs|go|rb|php|sh|kt|swift)$/i;
+
+  function readAsText(f) {
+    return new Promise((res) => { const r = new FileReader(); r.onload = () => res(String(r.result || "")); r.onerror = () => res(""); r.readAsText(f); });
+  }
+  function readAsDataUrl(f) {
+    return new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => res(null); r.readAsDataURL(f); });
+  }
+
+  // อ่านไฟล์: รูป -> Vision, ไฟล์ข้อความ -> เนื้อหา, อื่น ๆ -> แจ้งว่าตรวจอัตโนมัติไม่ได้
+  async function collectFiles(files) {
+    const imgs = [], names = []; let text = "";
+    for (const f of files.slice(0, 4)) {
+      names.push(f.name || "file");
+      if (f.type && f.type.startsWith("image/")) {
+        const d = await readAsDataUrl(f); if (d) imgs.push(d);
+      } else if (TEXT_EXT.test(f.name || "") || (f.type && f.type.startsWith("text/"))) {
+        const t = await readAsText(f); if (t) text += (text ? "\n" : "") + t.slice(0, 20000);
+      } else {
+        text += (text ? "\n" : "") + `[แนบไฟล์: ${f.name} — ตรวจเนื้อหาไฟล์ชนิดนี้อัตโนมัติไม่ได้ โปรดตรวจเอง]`;
+      }
+    }
+    return { imgs, names, text };
+  }
+
+  // คืน true = ควร "บล็อก" ไฟล์ (ล้าง input / กันวาง)
+  async function handleUpload(files) {
+    const { imgs, names, text } = await collectFiles(files);
+    if (!imgs.length && !text) return false;
+    const result = await inspect(text || ("แนบไฟล์: " + names.join(", ")), "upload", imgs);
+    if (!result) return !cfg.failOpen;   // เซิร์ฟเวอร์ล่ม: บล็อกถ้าโหมดบังคับ
+    const d = result.decision, c = result.classification || {};
+    if (d === "allow" || d === "monitor") {
+      if (d === "monitor" && OV) OV.toast(`บันทึกไฟล์แนบ (${c.label || "Internal"})`);
+      return false;
+    }
+    if (!OV) return d !== "warn";
+    const choice = await OV.showModal({
+      decision: d, channelName: channelName(), label: c.label, risk: c.risk_score,
+      reasons: c.reasons, coaching: result.coaching,
+    });
+    if (d === "warn") return choice !== "confirm";   // ยืนยัน = ไม่บล็อก
+    return true;                                       // redact/block บนไฟล์ = บล็อก
+  }
+
+  // ปุ่มแนบไฟล์ (input[type=file]) — บล็อกได้จริงด้วยการล้างค่าก่อนกดส่ง
+  document.addEventListener("change", (e) => {
+    if (!cfg.enabled) return;
+    const inp = e.target;
+    if (!inp || inp.tagName !== "INPUT" || inp.type !== "file") return;
+    const files = Array.from(inp.files || []);
+    if (!files.length) return;
+    handleUpload(files).then((block) => {
+      if (block) { try { inp.value = ""; } catch (_) {} if (OV) OV.toast("บล็อกไฟล์แนบที่มีข้อมูลลับแล้ว 🛡️", "err"); }
+    });
+  }, true);
+
+  // ลากไฟล์วาง — โหมดบังคับ: กันไว้ก่อน; โหมดปกติ: ตรวจ+เตือน+บันทึก
+  document.addEventListener("drop", (e) => {
+    if (!cfg.enabled) return;
+    const dt = e.dataTransfer; if (!dt) return;
+    const files = Array.from(dt.files || []); if (!files.length) return;
+    if (cfg.enforced) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (OV) OV.toast("โหมดบังคับ: โปรดแนบไฟล์ด้วยปุ่มแนบไฟล์เพื่อให้ตรวจก่อน 🔒", "err");
+    }
+    handleUpload(files);
+  }, true);
+
   if (OV) OV.toast(`SentinelAI พร้อมป้องกันบน ${channelName()}`);
   console.log("%c🛡️ SentinelAI", "color:#10b981;font-weight:bold", "active on", channelName());
 })();

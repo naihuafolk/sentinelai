@@ -1845,6 +1845,13 @@ async function renderSettings() {
         </tbody></table></div>
     </div>
 
+    <!-- แจ้งเตือนเข้า LINE -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-head"><h2 class="card-title">🔔 แจ้งเตือนเข้า LINE ทันที</h2></div>
+      <p class="micro" style="margin:0 0 12px">เมื่อพบการพยายามส่งข้อมูลลับถึงเกณฑ์เสี่ยง ระบบจะส่งข้อความเข้า LINE ให้แอดมินทันที</p>
+      <div id="notify-body">${loadingBlock()}</div>
+    </div>
+
     <!-- อุปกรณ์ที่ใช้สิทธิ์ -->
     <div class="card" style="margin-top:16px">
       <div class="card-head"><h2 class="card-title">🖥️ เครื่องที่ใช้สิทธิ์ (Devices)</h2></div>
@@ -1869,6 +1876,7 @@ async function renderSettings() {
 
   loadDevices();
   loadBilling();
+  loadNotify();
   $("#btn-ping")?.addEventListener("click", async (e) => {
     const b = e.currentTarget, out = $("#ping-out"); b.disabled = true; const oo = b.innerHTML; b.innerHTML = '<span class="spinner"></span> กำลังทดสอบ…'; out.textContent = "";
     try {
@@ -1876,6 +1884,64 @@ async function renderSettings() {
       out.innerHTML = h.ark_reachable ? '<span style="color:var(--accent-2)">✅ เชื่อมต่อระบบ AI สำเร็จ</span>' : '<span style="color:#ff9a9a">⛔ เชื่อมต่อไม่สำเร็จ (ตรวจสอบคีย์/เครือข่าย)</span>';
     } catch (err) { if (err.status !== 401) out.innerHTML = '<span style="color:#ff9a9a">⛔ ' + esc(err.message) + "</span>"; }
     finally { b.disabled = false; b.innerHTML = oo; }
+  });
+}
+
+/* ---- แจ้งเตือน LINE (ในหน้าตั้งค่า) ---- */
+async function loadNotify() {
+  const box = $("#notify-body");
+  if (!box) return;
+  let n;
+  try { n = await api.get("/notify"); }
+  catch (e) { if (e.status !== 401) box.innerHTML = '<p class="micro" style="color:#ff9a9a">โหลดค่าไม่สำเร็จ</p>'; return; }
+
+  const inp = "width:100%;padding:9px 11px;background:#0b1220;border:1px solid #2a3a4f;border-radius:8px;color:#e6edf5;font-size:13px";
+  const lbl = "display:block;font-size:12px;font-weight:600;color:#b8c4d4;margin:0 0 5px";
+  box.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px;max-width:580px">
+      <label style="display:flex;align-items:center;gap:9px;font-size:14px;cursor:pointer">
+        <input type="checkbox" id="nf-on" ${n.enabled ? "checked" : ""} style="width:17px;height:17px;accent-color:#10b981"/>
+        <span>เปิดการแจ้งเตือนเข้า LINE</span>
+      </label>
+      <div><label style="${lbl}">Channel access token (LINE Messaging API)</label>
+        <input id="nf-token" type="password" autocomplete="off" style="${inp}"
+          placeholder="${n.has_token ? '•••••• มีคีย์อยู่แล้ว — เว้นว่างถ้าไม่เปลี่ยน' : 'วาง Channel access token ที่นี่'}"/></div>
+      <div><label style="${lbl}">ID ผู้รับ (userId หรือ groupId)</label>
+        <input id="nf-to" value="${esc(n.to || "")}" style="${inp}" placeholder="Uxxxxxxxx… หรือ Cxxxxxxxx…"/></div>
+      <div><label style="${lbl}">แจ้งเตือนเมื่อความเสี่ยง ≥ (1–100)</label>
+        <input id="nf-risk" type="number" min="1" max="100" value="${n.min_risk || 70}" style="${inp};max-width:130px"/></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" id="nf-save">บันทึก</button>
+        <button class="btn btn-ghost" id="nf-test">ส่งข้อความทดสอบ</button>
+        <span class="micro" id="nf-out"></span>
+      </div>
+      <div class="pdpa-note">💡 <div><b>วิธีได้ค่า:</b> สร้าง <b>LINE Official Account</b> → เปิด <b>Messaging API</b> ใน LINE Developers → คัดลอก <b>Channel access token</b>. ส่วน <b>ID ผู้รับ</b> คือ userId/groupId ที่ให้รับแจ้งเตือน (เพิ่มบอทเป็นเพื่อน/เข้ากลุ่มก่อน)</div></div>
+    </div>`;
+
+  $("#nf-save")?.addEventListener("click", async () => {
+    const out = $("#nf-out"); out.textContent = "กำลังบันทึก…";
+    try {
+      await api.post("/notify", {
+        enabled: $("#nf-on").checked,
+        line_token: $("#nf-token").value,
+        line_to: $("#nf-to").value.trim(),
+        min_risk: Number($("#nf-risk").value) || 70,
+      });
+      out.innerHTML = '<span style="color:var(--accent-2)">✓ บันทึกแล้ว</span>';
+      toast("บันทึกการแจ้งเตือนแล้ว", "ok");
+      loadNotify();
+    } catch (e) { out.innerHTML = '<span style="color:#ff9a9a">⛔ ' + esc(e.message || "ผิดพลาด") + "</span>"; }
+  });
+
+  $("#nf-test")?.addEventListener("click", async (e) => {
+    const b = e.currentTarget, out = $("#nf-out"); b.disabled = true; out.textContent = "กำลังส่ง…";
+    try {
+      const r = await api.post("/notify/test", {});
+      out.innerHTML = r.ok
+        ? '<span style="color:var(--accent-2)">✅ ส่งเข้า LINE แล้ว — เช็คมือถือ</span>'
+        : '<span style="color:#ff9a9a">⛔ ' + esc(r.detail || "ส่งไม่สำเร็จ") + "</span>";
+    } catch (err) { out.innerHTML = '<span style="color:#ff9a9a">⛔ ' + esc(err.message || "ผิดพลาด") + "</span>"; }
+    finally { b.disabled = false; }
   });
 }
 

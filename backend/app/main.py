@@ -16,12 +16,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path as _Path
 from typing import Optional
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi import Body, Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import __version__, audit, auth, billing, db, service
+from . import __version__, audit, auth, billing, db, line_alert, service
 from .byteplus import get_client
 from .classifier.fingerprint import get_index
 from .config import settings
@@ -307,6 +307,46 @@ async def public_config():
     return {"version": __version__,
             "monitored_channels": ["chatgpt", "gemini", "claude", "copilot", "deepseek", "grok", "perplexity"],
             **settings.public_dict()}
+
+
+@app.get(f"{API}/notify", tags=["system"])
+async def get_notify(ctx: dict = Depends(auth.get_current_user)):
+    """อ่านค่าตั้งค่าแจ้งเตือน LINE ขององค์กร (ไม่คืน token จริงเพื่อความปลอดภัย)."""
+    org = ctx["org"]
+    return {
+        "enabled": bool(org.get("alert_enabled")),
+        "to": org.get("line_to") or "",
+        "min_risk": int(org.get("alert_min_risk") or 70),
+        "has_token": bool((org.get("line_token") or "").strip()),
+    }
+
+
+@app.post(f"{API}/notify", tags=["system"])
+async def save_notify(payload: dict = Body(...), ctx: dict = Depends(auth.get_current_user)):
+    """บันทึกค่าตั้งค่าแจ้งเตือน LINE. เว้น line_token ว่าง = ไม่เปลี่ยน token เดิม."""
+    org = ctx["org"]
+    raw_token = payload.get("line_token")
+    token = raw_token.strip() if isinstance(raw_token, str) and raw_token.strip() else None
+    try:
+        min_risk = max(1, min(100, int(payload.get("min_risk") or 70)))
+    except (TypeError, ValueError):
+        min_risk = 70
+    db.set_org_notify(
+        org["id"],
+        line_token=token,
+        line_to=(payload.get("line_to") or "").strip(),
+        alert_min_risk=min_risk,
+        alert_enabled=1 if payload.get("enabled") else 0,
+    )
+    return {"ok": True}
+
+
+@app.post(f"{API}/notify/test", tags=["system"])
+async def test_notify(ctx: dict = Depends(auth.get_current_user)):
+    """ส่งข้อความทดสอบเข้า LINE ด้วยค่าล่าสุดที่บันทึกไว้."""
+    org = db.get_org(ctx["org"]["id"]) or ctx["org"]
+    ok, detail = await line_alert.send_test(org)
+    return {"ok": ok, "detail": detail}
 
 
 @app.get(f"{API}/health", response_model=Health, tags=["system"])

@@ -44,6 +44,10 @@ CREATE TABLE IF NOT EXISTS orgs (
     valid_until TEXT,                      -- วันหมดอายุ license (ISO)
     stripe_customer_id TEXT,              -- ลูกค้าใน Stripe (สำหรับจ่ายเงินอัตโนมัติ)
     stripe_subscription_id TEXT,
+    line_token TEXT,                      -- LINE Messaging API channel access token (แจ้งเตือน)
+    line_to TEXT,                         -- ปลายทางแจ้งเตือน (userId/groupId)
+    alert_min_risk INTEGER DEFAULT 70,    -- แจ้งเตือนเมื่อความเสี่ยง >= ค่านี้
+    alert_enabled INTEGER DEFAULT 0,      -- เปิด/ปิดการแจ้งเตือน LINE
     created_at TEXT
 );
 CREATE TABLE IF NOT EXISTS users (
@@ -112,7 +116,9 @@ def init_db() -> None:
         # migration: เพิ่มคอลัมน์ license ให้ orgs เก่า
         for col, ddl in (("seats", "INTEGER DEFAULT 5"), ("status", "TEXT DEFAULT 'trial'"),
                          ("quota_month", "INTEGER DEFAULT 2000"), ("valid_until", "TEXT"),
-                         ("stripe_customer_id", "TEXT"), ("stripe_subscription_id", "TEXT")):
+                         ("stripe_customer_id", "TEXT"), ("stripe_subscription_id", "TEXT"),
+                         ("line_token", "TEXT"), ("line_to", "TEXT"),
+                         ("alert_min_risk", "INTEGER DEFAULT 70"), ("alert_enabled", "INTEGER DEFAULT 0")):
             try:
                 if not _has_column(conn, "orgs", col):
                     conn.execute(f"ALTER TABLE orgs ADD COLUMN {col} {ddl}")
@@ -174,6 +180,24 @@ def set_stripe_ids(org_id: int, *, customer_id: Optional[str] = None,
         conn = _connect()
         conn.execute(f"UPDATE orgs SET {', '.join(sets)} WHERE id=?", params)
         conn.commit()
+
+
+def set_org_notify(org_id: int, *, line_token=None, line_to=None,
+                   alert_min_risk=None, alert_enabled=None) -> bool:
+    """ตั้งค่าแจ้งเตือน LINE ต่อองค์กร (ส่งเฉพาะฟิลด์ที่ไม่ใช่ None)."""
+    sets, params = [], []
+    for col, val in (("line_token", line_token), ("line_to", line_to),
+                     ("alert_min_risk", alert_min_risk), ("alert_enabled", alert_enabled)):
+        if val is not None:
+            sets.append(f"{col}=?"); params.append(val)
+    if not sets:
+        return False
+    params.append(org_id)
+    with _lock:
+        conn = _connect()
+        cur = conn.execute(f"UPDATE orgs SET {', '.join(sets)} WHERE id=?", params)
+        conn.commit()
+        return cur.rowcount > 0
 
 
 def count_orgs() -> int:
