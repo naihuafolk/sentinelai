@@ -7,6 +7,7 @@ SentinelAI API (FastAPI) — Multi-tenant SaaS
 """
 from __future__ import annotations
 
+import asyncio
 import csv
 import io
 import json
@@ -25,7 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import __version__, audit, auth, billing, db, line_alert, service
+from . import __version__, audit, auth, billing, db, line_alert, service, sms
 from .byteplus import get_client
 from .classifier.fingerprint import get_index
 from .config import settings
@@ -351,6 +352,29 @@ async def test_notify(ctx: dict = Depends(auth.get_current_user)):
     org = db.get_org(ctx["org"]["id"]) or ctx["org"]
     ok, detail = await line_alert.send_test(org)
     return {"ok": ok, "detail": detail}
+
+
+@app.post(f"{API}/contact", tags=["system"])
+async def contact(payload: dict = Body(...)):
+    """ฟอร์มติดต่อทีมงาน (สาธารณะ) — เก็บ Lead ลง DB + ส่ง SMS แจ้งทีมขาย (best-effort)."""
+    name = (payload.get("name") or "").strip()[:120]
+    business = (payload.get("business") or "").strip()[:160]
+    seats = str(payload.get("seats") or "").strip()[:40]
+    con = (payload.get("contact") or "").strip()[:160]
+    if not name or not business or not con:
+        raise HTTPException(400, "กรุณากรอกชื่อ ธุรกิจ และช่องทางติดต่อกลับ")
+    lead = {"name": name, "business": business, "seats": seats, "contact": con}
+    db.insert_lead(name, business, seats, con)
+    try:
+        asyncio.create_task(sms.notify_lead(lead))
+    except RuntimeError:
+        pass
+    return {"ok": True}
+
+
+@app.get(f"{API}/admin/leads", tags=["admin"])
+async def admin_leads(ctx: dict = Depends(auth.get_platform_admin)):
+    return {"leads": db.list_leads()}
 
 
 @app.get(f"{API}/notify/line-link", tags=["system"])

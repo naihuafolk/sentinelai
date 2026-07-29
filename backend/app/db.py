@@ -95,6 +95,12 @@ CREATE TABLE IF NOT EXISTS fingerprints (
     name TEXT NOT NULL, label TEXT NOT NULL,
     chunks INTEGER, hashes TEXT NOT NULL, created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS leads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts TEXT NOT NULL,
+    name TEXT, business TEXT, seats TEXT, contact TEXT, note TEXT,
+    notified INTEGER DEFAULT 0
+);
 """
 
 
@@ -520,6 +526,24 @@ def delete_policy(org_id: int, pid: int) -> bool:
 def count_policies(org_id: int) -> int:
     with _lock:
         return _connect().execute("SELECT COUNT(*) c FROM policies WHERE org_id=?", (org_id,)).fetchone()["c"]
+
+
+# ==================== Leads (ฟอร์มติดต่อทีมงาน) ====================
+def insert_lead(name: str, business: str, seats: str, contact: str, note: str = "") -> int:
+    with _lock:
+        conn = _connect()
+        cur = conn.execute(
+            "INSERT INTO leads (ts, name, business, seats, contact, note) VALUES (?,?,?,?,?,?)",
+            (now_iso(), name, business, seats, contact, note))
+        conn.commit()
+        return cur.lastrowid
+
+
+def list_leads(limit: int = 200) -> list[dict]:
+    with _lock:
+        rows = _connect().execute(
+            "SELECT * FROM leads ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+    return [dict(r) for r in rows]
 
 
 # ==================== Fingerprints ====================

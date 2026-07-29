@@ -81,6 +81,17 @@ class Settings:
     def line_central_enabled(self) -> bool:
         return bool(self.line_token)
 
+    # SMS แจ้งเตือน Lead (ฟอร์มติดต่อทีมงาน) — ผ่าน Twilio
+    # ต้องมีบัญชี Twilio + เครดิตถึงจะส่งจริง (ไม่ตั้ง = เก็บ Lead ลง DB อย่างเดียว)
+    twilio_sid: str = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
+    twilio_token: str = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
+    twilio_from: str = os.getenv("TWILIO_FROM", "").strip()        # เบอร์/ผู้ส่งของ Twilio
+    lead_notify_phone: str = os.getenv("LEAD_NOTIFY_PHONE", "+66987893988").strip()  # เบอร์รับแจ้งเตือน
+
+    @property
+    def sms_enabled(self) -> bool:
+        return bool(self.twilio_sid and self.twilio_token and self.twilio_from)
+
     @property
     def billing_enabled(self) -> bool:
         return bool(self.stripe_secret_key)

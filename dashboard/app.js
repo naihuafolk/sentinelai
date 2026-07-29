@@ -297,9 +297,10 @@ function renderAuth(tab = "login") {
           <span class="lp-brandname">Sentinel<span class="brand-ai">AI</span></span>
         </div>
         <nav class="lp-nav-actions" aria-label="เมนู">
+          <a class="lp-navlink" href="#lp-articles">บทความ</a>
           <a class="lp-navlink" href="#lp-pricing">ราคา</a>
           <a class="lp-navlink" href="#" data-lp-cta="login">เข้าสู่ระบบ</a>
-          <button type="button" class="btn btn-primary btn-sm" data-lp-cta="signup">เริ่มทดลองฟรี</button>
+          <button type="button" class="btn btn-primary btn-sm" data-lp-cta="contact">ติดต่อทีมงาน</button>
         </nav>
       </header>
 
@@ -309,7 +310,7 @@ function renderAuth(tab = "login") {
         <h1 class="lp-hero-title">กันข้อมูลบริษัท<span class="lp-grad"> รั่วสู่ AI</span></h1>
         <p class="lp-hero-sub">SentinelAI ดักจับข้อมูลลับก่อนพนักงานส่งเข้า ChatGPT · Gemini · Claude · Copilot — ขับเคลื่อนด้วย AI</p>
         <div class="lp-hero-cta">
-          <button type="button" class="btn btn-primary lp-btn-lg" data-lp-cta="signup">เริ่มทดลองฟรี 14 วัน</button>
+          <button type="button" class="btn btn-primary lp-btn-lg" data-lp-cta="contact">ติดต่อทีมงาน</button>
           <button type="button" class="btn btn-ghost lp-btn-lg" data-lp-cta="login">เข้าสู่ระบบ</button>
         </div>
         <div class="lp-trust">
@@ -403,7 +404,7 @@ function renderAuth(tab = "login") {
               <li>Dashboard</li>
               <li>อีเมลซัพพอร์ต</li>
             </ul>
-            <button type="button" class="btn btn-ghost btn-block" data-lp-cta="signup">เริ่มทดลองฟรี</button>
+            <button type="button" class="btn btn-ghost btn-block" data-lp-cta="contact">ติดต่อทีมงาน</button>
           </article>
 
           <article class="lp-plan lp-plan--hot">
@@ -418,7 +419,7 @@ function renderAuth(tab = "login") {
               <li>นโยบายกำหนดเอง</li>
               <li>Fingerprint เอกสารลับ</li>
             </ul>
-            <button type="button" class="btn btn-primary btn-block" data-lp-cta="signup">เริ่มทดลองฟรี 14 วัน</button>
+            <button type="button" class="btn btn-primary btn-block" data-lp-cta="contact">ติดต่อทีมงาน</button>
           </article>
 
           <article class="lp-plan">
@@ -432,17 +433,107 @@ function renderAuth(tab = "login") {
               <li>ผู้ดูแลบัญชี (Account Manager)</li>
               <li>SLA รับประกันบริการ</li>
             </ul>
-            <button type="button" class="btn btn-ghost btn-block" data-lp-cta="signup">ติดต่อฝ่ายขาย</button>
+            <button type="button" class="btn btn-ghost btn-block" data-lp-cta="contact">ติดต่อทีมงาน</button>
           </article>
         </div>
         <p class="lp-price-note">* ราคาข้างต้นเป็น <b>ตัวอย่าง</b> ปรับเปลี่ยนได้ · ยังไม่รวมภาษีมูลค่าเพิ่ม (VAT)</p>
       </section>
 
+      <style>
+        .lp-articles{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+        @media(max-width:900px){.lp-articles{grid-template-columns:1fr 1fr}}
+        @media(max-width:600px){.lp-articles{grid-template-columns:1fr}}
+        .lp-article{background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.16);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:11px;transition:.2s}
+        .lp-article:hover{border-color:rgba(16,185,129,.5);transform:translateY(-3px)}
+        .lp-article-tag{align-self:flex-start;font-size:11px;font-weight:700;letter-spacing:.04em;color:#34d399;background:rgba(16,185,129,.12);border:1px solid rgba(52,211,153,.35);padding:3px 11px;border-radius:999px}
+        .lp-article h3{font-size:17px;font-weight:800;color:#f1f5f9;line-height:1.35;margin:0}
+        .lp-article p{font-size:13.5px;color:#a9b8cc;line-height:1.62;flex:1;margin:0}
+        .lp-article-more{font-size:13px;font-weight:700;color:#34d399;cursor:pointer;align-self:flex-start}
+        .lp-article-more:hover{color:#6ee7b7}
+        .lp-contact-wrap{max-width:640px;margin:0 auto}
+        .lp-contact-form{background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.16);border-radius:18px;padding:26px;display:flex;flex-direction:column;gap:16px}
+        .lp-cf-row{display:flex;gap:14px}
+        @media(max-width:600px){.lp-cf-row{flex-direction:column}}
+        .lp-cf-field{flex:1;display:flex;flex-direction:column;gap:6px}
+        .lp-cf-field label{font-size:13px;font-weight:600;color:#cbd5e1}
+        .lp-cf-field input{padding:11px 13px;background:rgba(11,18,32,.7);border:1px solid rgba(148,163,184,.25);border-radius:10px;color:#e6edf5;font-size:14px;font-family:inherit;width:100%}
+        .lp-cf-field input:focus{outline:none;border-color:#10b981}
+        .lp-cf-msg{text-align:center;font-size:14px;min-height:20px;font-weight:600}
+      </style>
+
+      <!-- ===== บทความ (แฝงขาย) ===== -->
+      <section class="lp-section" id="lp-articles">
+        <div class="lp-sec-head">
+          <h2 class="lp-h2">บทความ &amp; ความรู้</h2>
+          <p class="lp-sec-sub">เข้าใจความเสี่ยงและวิธีป้องกันข้อมูลลับในยุค AI</p>
+        </div>
+        <div class="lp-articles">
+          <article class="lp-article">
+            <span class="lp-article-tag">PDPA</span>
+            <h3>พนักงานใช้ ChatGPT อาจทำบริษัทผิด PDPA ได้อย่างไร</h3>
+            <p>การวางข้อมูลลูกค้าลงเครื่องมือ AI คือการส่งข้อมูลส่วนบุคคลออกนอกองค์กรโดยไม่มีมาตรการ ซึ่งเสี่ยงผิด PDPA โทษปรับสูงถึง 5 ล้านบาท — SentinelAI สร้าง “มาตรการที่เหมาะสม” พร้อมหลักฐานให้อัตโนมัติ</p>
+            <span class="lp-article-more" data-lp-cta="contact">อ่านต่อ →</span>
+          </article>
+          <article class="lp-article">
+            <span class="lp-article-tag">เคสจริง</span>
+            <h3>5 ช่องทางที่ข้อมูลบริษัทรั่วผ่าน AI โดยไม่รู้ตัว</h3>
+            <p>ตั้งแต่ก๊อปโค้ดที่มี API key, วางสัญญาลับให้ AI สรุป, ไปจนถึงอัปสลิป/บัตรลูกค้าเป็นรูป — ช่องทางที่พนักงานไม่รู้ว่ากำลังทำข้อมูลรั่ว และวิธีปิดให้ครบทุกช่อง</p>
+            <span class="lp-article-more" data-lp-cta="contact">อ่านต่อ →</span>
+          </article>
+          <article class="lp-article">
+            <span class="lp-article-tag">AI-DLP</span>
+            <h3>AI-DLP คืออะไร ทำไมองค์กรยุคใหม่ต้องมี</h3>
+            <p>DLP แบบเดิมตรวจแค่ไฟล์และอีเมล แต่ยุค AI ข้อมูลรั่วผ่านช่องแชท SentinelAI คือ DLP ที่ออกแบบมาเพื่อยุค AI โดยเฉพาะ — ครอบคลุมทั้งข้อความ ไฟล์ และรูปภาพ</p>
+            <span class="lp-article-more" data-lp-cta="contact">อ่านต่อ →</span>
+          </article>
+          <article class="lp-article">
+            <span class="lp-article-tag">Best Practice</span>
+            <h3>ให้พนักงานใช้ AI ได้อย่างปลอดภัย โดยไม่ต้องแบน</h3>
+            <p>การบล็อก AI ทั้งบริษัททำให้พนักงานหนีไปใช้ที่บ้าน/มือถือ (Shadow IT) ยิ่งคุมไม่ได้ ทางที่ดีกว่าคือให้ใช้ได้เต็มที่ แต่กันเฉพาะความลับ — ซึ่งคือสิ่งที่ SentinelAI ทำ</p>
+            <span class="lp-article-more" data-lp-cta="contact">อ่านต่อ →</span>
+          </article>
+          <article class="lp-article">
+            <span class="lp-article-tag">เทคโนโลยี</span>
+            <h3>3 ชั้นการตรวจจับข้อมูลลับที่แม่นยำ</h3>
+            <p>Regex จับรูปแบบตายตัว (เลขบัตร/คีย์), Fingerprint จับเอกสารลับขององค์กรเอง, และ AI Vision อ่านรูป/เข้าใจบริบท — สามชั้นทำงานร่วมกันเพื่อความแม่นยำสูงสุด ลด False Positive</p>
+            <span class="lp-article-more" data-lp-cta="contact">อ่านต่อ →</span>
+          </article>
+          <article class="lp-article">
+            <span class="lp-article-tag">ROI</span>
+            <h3>ป้องกันหลักร้อย vs เสียหายหลักล้าน</h3>
+            <p>ค่าปรับ PDPA รวมกับค่าเสียชื่อเสียงและลูกค้าที่หายไป เทียบกับค่า SentinelAI เพียงหลักร้อยต่อเครื่อง/เดือน — การป้องกันคือการลงทุนที่คุ้มค่าที่สุดขององค์กร</p>
+            <span class="lp-article-more" data-lp-cta="contact">อ่านต่อ →</span>
+          </article>
+        </div>
+      </section>
+
+      <!-- ===== ติดต่อทีมงาน (ฟอร์มเก็บ Lead) ===== -->
+      <section class="lp-section" id="lp-contact">
+        <div class="lp-sec-head">
+          <h2 class="lp-h2">ติดต่อทีมงาน</h2>
+          <p class="lp-sec-sub">กรอกข้อมูลสั้น ๆ แล้วทีมงานจะติดต่อกลับพร้อมจัดเดโมให้</p>
+        </div>
+        <div class="lp-contact-wrap">
+          <form class="lp-contact-form" id="lp-contact-form">
+            <div class="lp-cf-row">
+              <div class="lp-cf-field"><label>ชื่อ *</label><input id="cf-name" required placeholder="ชื่อ-นามสกุล" /></div>
+              <div class="lp-cf-field"><label>ธุรกิจ / บริษัท *</label><input id="cf-biz" required placeholder="ชื่อบริษัท / ประเภทธุรกิจ" /></div>
+            </div>
+            <div class="lp-cf-row">
+              <div class="lp-cf-field"><label>จำนวนเครื่อง (โดยประมาณ) *</label><input id="cf-seats" type="number" min="1" required placeholder="เช่น 20" /></div>
+              <div class="lp-cf-field"><label>เบอร์ / อีเมล ติดต่อกลับ *</label><input id="cf-contact" required placeholder="เบอร์โทร หรือ อีเมล" /></div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block lp-btn-lg">ส่งข้อมูล — ให้ทีมงานติดต่อกลับ</button>
+            <div class="lp-cf-msg" id="cf-msg"></div>
+          </form>
+        </div>
+      </section>
+
       <!-- ===== AUTH (สมัคร / เข้าสู่ระบบ) — การ์ดเดิม ไม่เปลี่ยน logic/id ===== -->
       <section class="lp-auth" id="lp-auth">
         <div class="lp-auth-head">
-          <h2 class="lp-h2">เริ่มใช้งานวันนี้</h2>
-          <p class="lp-sec-sub">สร้างองค์กรและเริ่มทดลองฟรี 14 วัน — ไม่ต้องใช้บัตรเครดิต</p>
+          <h2 class="lp-h2">เข้าสู่ระบบ / เปิดใช้งานบัญชี</h2>
+          <p class="lp-sec-sub">สำหรับลูกค้าที่มีบัญชีแล้ว เข้าสู่ระบบเพื่อจัดการองค์กร · ยังไม่มีบัญชี? <b>ติดต่อทีมงาน</b>ด้านบน</p>
         </div>
         <div class="auth-card">
           <div class="auth-brand">
@@ -465,14 +556,48 @@ function renderAuth(tab = "login") {
         <nav class="lp-foot-links" aria-label="ลิงก์ท้ายหน้า">
           <a href="#" onclick="return false">เงื่อนไขการใช้งาน</a>
           <a href="#" onclick="return false">นโยบายความเป็นส่วนตัว</a>
-          <a href="#" onclick="return false">ติดต่อเรา</a>
+          <a href="#lp-contact" data-lp-cta="contact">ติดต่อเรา</a>
         </nav>
         <div class="lp-foot-copy">© 2026 SentinelAI · ป้องกันข้อมูลลับรั่วไหลสู่ AI</div>
       </footer>
     </div>`;
   $$(".auth-tab", el).forEach((b) => b.addEventListener("click", () => renderAuth(b.dataset.tab)));
   // ปุ่ม CTA บนหน้า Landing → เลื่อน/โฟกัสไปยังการ์ดสมัคร-เข้าสู่ระบบ (ไม่แตะ logic ของ auth)
-  $$("[data-lp-cta]", el).forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); goAuth(b.dataset.lpCta); }));
+  $$("[data-lp-cta]", el).forEach((b) => b.addEventListener("click", (e) => {
+    e.preventDefault();
+    const cta = b.dataset.lpCta;
+    if (cta === "contact") {
+      const c = $("#lp-contact");
+      if (c) c.scrollIntoView({ behavior: REDUCE_MOTION ? "auto" : "smooth", block: "start" });
+      setTimeout(() => { try { $("#cf-name")?.focus({ preventScroll: true }); } catch {} }, REDUCE_MOTION ? 0 : 420);
+    } else { goAuth(cta); }
+  }));
+
+  // ฟอร์มติดต่อทีมงาน (เก็บ Lead → แจ้งเตือนทีมขาย)
+  const cform = $("#lp-contact-form");
+  if (cform) cform.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const msg = $("#cf-msg");
+    const payload = {
+      name: $("#cf-name").value.trim(),
+      business: $("#cf-biz").value.trim(),
+      seats: $("#cf-seats").value.trim(),
+      contact: $("#cf-contact").value.trim(),
+    };
+    if (!payload.name || !payload.business || !payload.contact) {
+      msg.innerHTML = '<span style="color:#ffcf70">กรุณากรอกข้อมูลให้ครบ</span>'; return;
+    }
+    const btn = cform.querySelector('button[type="submit"]');
+    btn.disabled = true; msg.textContent = "กำลังส่ง…";
+    try {
+      await api.post("/contact", payload, { skipAuthHandling: true });
+      cform.reset();
+      msg.innerHTML = '<span style="color:#34d399">✅ ส่งเรียบร้อย! ทีมงานจะติดต่อกลับโดยเร็วที่สุด</span>';
+    } catch (e) {
+      msg.innerHTML = '<span style="color:#ff9a9a">⛔ ส่งไม่สำเร็จ กรุณาลองใหม่ หรือโทร 098-789-3988</span>';
+    } finally { btn.disabled = false; }
+  });
+
   (tab === "signup" ? renderSignupForm : renderLoginForm)();
 }
 
