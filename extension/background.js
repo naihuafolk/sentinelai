@@ -80,7 +80,9 @@ async function callGet(path, query) {
   const cfg = await getCfg();
   let url = apiBase(cfg) + path;
   if (query) url += "?" + new URLSearchParams(query).toString();
-  const res = await fetch(url);
+  const headers = {};
+  if (cfg.orgKey) headers["X-Sentinel-Key"] = cfg.orgKey;  // ผูกองค์กรให้ /stats ถูกต้อง
+  const res = await fetch(url, { headers });
   if (!res.ok) throw new Error("HTTP " + res.status);
   return res.json();
 }
@@ -117,8 +119,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   return true; // ใช้ sendResponse แบบ async
 });
 
-chrome.runtime.onInstalled.addListener(async () => {
-  const cur = await getCfg();
-  chrome.storage.local.set(cur); // เขียนค่าเริ่มต้นถ้ายังไม่มี
+chrome.runtime.onInstalled.addListener(() => {
+  // เขียนเฉพาะค่าเริ่มต้นที่ยังไม่มีลง local — ไม่ก๊อปค่านโยบาย (managed) มาเก็บใน local
+  // (กันคีย์องค์กรจาก Group Policy ค้างใน local ตอนแอดมินถอน/เปลี่ยนคีย์)
+  chrome.storage.local.get(DEFAULTS, (v) => {
+    const fill = {};
+    for (const k in DEFAULTS) if (v[k] === undefined) fill[k] = DEFAULTS[k];
+    if (Object.keys(fill).length) chrome.storage.local.set(fill);
+  });
   chrome.action.setBadgeText({ text: "" });
 });

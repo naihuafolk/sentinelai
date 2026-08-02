@@ -13,6 +13,7 @@ import io
 import json
 import logging
 import secrets
+import sqlite3
 import string
 import zipfile
 from urllib.parse import quote
@@ -26,7 +27,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import __version__, audit, auth, billing, db, line_alert, service, sms
+from . import __version__, audit, auth, billing, db, line_alert, ratelimit, service, sms
 from .byteplus import get_client
 from .classifier.fingerprint import get_index
 from .config import settings
@@ -78,8 +79,10 @@ def _user_out(u: dict) -> UserOut:
 
 # ============================ Auth ============================
 @app.post(f"{API}/auth/signup", response_model=AuthResponse, tags=["auth"])
-async def signup(req: SignupRequest):
+async def signup(req: SignupRequest, request: Request):
     """สมัครใช้งาน — สร้างองค์กรใหม่ + ผู้ดูแล + คืน token และ API key ขององค์กร."""
+    if not ratelimit.allow("signup:" + auth.client_ip(request), 5, 300):
+        raise HTTPException(429, "สมัครบ่อยเกินไป โปรดลองใหม่ภายหลัง")
     if db.get_user_by_email(req.email):
         raise HTTPException(409, "อีเมลนี้ถูกใช้สมัครแล้ว")
     api_key = auth.new_org_api_key()
@@ -87,17 +90,24 @@ async def signup(req: SignupRequest):
     org_id = db.create_org(req.org_name.strip(), api_key, plan="starter",
                            status="trial", seats=5, quota_month=2000, valid_until=valid_until)
     seed_org_defaults(org_id)  # ใส่ policy เริ่มต้นให้องค์กรใหม่
-    uid = db.create_user(org_id, req.email, auth.hash_password(req.password), req.name)
+    try:
+        uid = db.create_user(org_id, req.email, auth.hash_password(req.password), req.name)
+    except sqlite3.IntegrityError:
+        raise HTTPException(409, "อีเมลนี้ถูกใช้สมัครแล้ว")
     token = auth.make_token(uid, org_id, req.email.lower().strip())
     return AuthResponse(token=token, user=_user_out(db.get_user(uid)), org=_org_out(db.get_org(org_id)))
 
 
 @app.post(f"{API}/auth/login", response_model=AuthResponse, tags=["auth"])
-async def login(req: LoginRequest):
+async def login(req: LoginRequest, request: Request):
+    if not ratelimit.allow("login:" + auth.client_ip(request), 10, 60):
+        raise HTTPException(429, "พยายามเข้าสู่ระบบบ่อยเกินไป โปรดลองใหม่ภายหลัง")
     user = db.get_user_by_email(req.email)
     if not user or not auth.verify_password(req.password, user["password_hash"]):
         raise HTTPException(401, "อีเมลหรือรหัสผ่านไม่ถูกต้อง")
     org = db.get_org(user["org_id"])
+    if not org:
+        raise HTTPException(401, "ไม่พบองค์กรของผู้ใช้")
     token = auth.make_token(user["id"], org["id"], user["email"])
     return AuthResponse(token=token, user=_user_out(user), org=_org_out(org))
 
@@ -355,8 +365,14 @@ async def test_notify(ctx: dict = Depends(auth.get_current_user)):
 
 
 @app.post(f"{API}/contact", tags=["system"])
-async def contact(payload: dict = Body(...)):
-    """ฟอร์มติดต่อทีมงาน (สาธารณะ) — เก็บ Lead ลง DB + ส่ง SMS แจ้งทีมขาย (best-effort)."""
+async def contact(request: Request, payload: dict = Body(...)):
+    """ฟอร์มติดต่อทีมงาน (สาธารณะ) — เก็บ Lead ลง DB + แจ้งทีมขาย (best-effort)."""
+    ip = auth.client_ip(request)
+    # กันสแปม: จำกัด 5 ครั้ง/นาที/ไอพี (กัน DB flood + SMS bomb)
+    if not ratelimit.allow("contact:" + ip, 5, 60):
+        raise HTTPException(429, "ส่งบ่อยเกินไป โปรดลองใหม่ในอีกสักครู่")
+    if payload.get("website"):   # honeypot: บอทมักกรอกช่องซ่อนนี้
+        return {"ok": True}
     name = (payload.get("name") or "").strip()[:120]
     business = (payload.get("business") or "").strip()[:160]
     seats = str(payload.get("seats") or "").strip()[:40]
@@ -365,10 +381,11 @@ async def contact(payload: dict = Body(...)):
         raise HTTPException(400, "กรุณากรอกชื่อ ธุรกิจ และช่องทางติดต่อกลับ")
     lead = {"name": name, "business": business, "seats": seats, "contact": con}
     db.insert_lead(name, business, seats, con)
-    # แจ้งเตือนทีมขายทั้งทาง SMS และ LINE (best-effort ทั้งคู่)
+    # แจ้งเตือนทีมขาย — LINE ทุกครั้ง, SMS เฉพาะที่ยังไม่เกินเพดาน/ชม. (กันเปลืองเงิน Twilio)
     try:
-        asyncio.create_task(sms.notify_lead(lead))
         asyncio.create_task(line_alert.notify_lead_line(lead))
+        if ratelimit.sms_allowed(settings.sms_max_per_hour):
+            asyncio.create_task(sms.notify_lead(lead))
     except RuntimeError:
         pass
     return {"ok": True}
@@ -435,6 +452,8 @@ async def _handle_line_event(ev: dict) -> None:
 @app.post(f"{API}/line/webhook", tags=["system"])
 async def line_webhook(request: Request):
     """รับ event จาก LINE (แอดบอท/ส่งโค้ดเชื่อม) — endpoint สาธารณะ ตรวจด้วยลายเซ็น."""
+    if not ratelimit.allow("linehook:" + auth.client_ip(request), 60, 60):
+        raise HTTPException(429, "too many requests")
     body = await request.body()
     if not line_alert.verify_signature(body, request.headers.get("x-line-signature", "")):
         raise HTTPException(403, "bad signature")
@@ -504,13 +523,21 @@ async def admin_overview(ctx: dict = Depends(auth.get_platform_admin)):
 
 
 # ============================ Downloads (extension/agent) =============
+_ZIP_SKIP_SUFFIX = (".db", ".pyc", ".key", ".pem", ".env")
+_ZIP_SKIP_NAME = {".jwt_secret", "sentinel.env", ".env"}
+
+
 def _zip_dir(folder: _Path, arc_root: str = "") -> bytes:
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         for p in folder.rglob("*"):
-            if p.is_file() and "__pycache__" not in p.parts and not p.name.endswith((".db", ".pyc")):
-                rel = p.relative_to(folder).as_posix()
-                z.write(p, f"{arc_root}/{rel}" if arc_root else rel)
+            # กันไฟล์ลับ/คีย์/env หลุดออกไปกับตัวติดตั้งที่ดาวน์โหลดสาธารณะ
+            if not p.is_file() or "__pycache__" in p.parts:
+                continue
+            if p.name in _ZIP_SKIP_NAME or p.name.endswith(_ZIP_SKIP_SUFFIX) or p.name.startswith(".env"):
+                continue
+            rel = p.relative_to(folder).as_posix()
+            z.write(p, f"{arc_root}/{rel}" if arc_root else rel)
     buf.seek(0)
     return buf.read()
 

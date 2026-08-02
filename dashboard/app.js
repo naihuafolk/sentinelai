@@ -582,8 +582,8 @@ function renderAuth(tab = "login") {
       <footer class="lp-footer">
         <div class="lp-foot-brand"><span aria-hidden="true">🛡️</span> Sentinel<span class="brand-ai">AI</span></div>
         <nav class="lp-foot-links" aria-label="ลิงก์ท้ายหน้า">
-          <a href="#" onclick="return false">เงื่อนไขการใช้งาน</a>
-          <a href="#" onclick="return false">นโยบายความเป็นส่วนตัว</a>
+          <a href="/terms.html" target="_blank" rel="noopener">เงื่อนไขการใช้งาน</a>
+          <a href="/privacy.html" target="_blank" rel="noopener">นโยบายความเป็นส่วนตัว</a>
           <a href="#lp-contact" data-lp-cta="contact">ติดต่อเรา</a>
         </nav>
         <div class="lp-foot-copy">© 2026 SentinelAI · ป้องกันข้อมูลลับรั่วไหลสู่ AI</div>

@@ -238,6 +238,32 @@
   }
 
   // ---------- Event listeners (capture phase) ----------
+  let imgBypassOnce = false;  // อนุญาตวางรูปรอบถัดไป (หลังผู้ใช้ยืนยันในโหมดบังคับ)
+
+  // ตรวจรูปที่วาง — โหมดปกติ (passive): รูปวางไปแล้ว แค่เตือน/บันทึก (รูปไม่หาย);
+  //                โหมดบังคับ: กันรูปไว้ตรวจก่อน แล้วให้ผู้ใช้ยืนยันวางซ้ำถ้าปลอดภัย
+  async function handlePastedImage(editor, text, imgs, passive) {
+    const result = await inspect(text || "แนบรูปภาพ", "paste", imgs);
+    if (!result) {  // เชื่อมเซิร์ฟเวอร์ไม่ได้
+      if (!passive && !cfg.failOpen && OV) OV.toast("โหมดบังคับ: หยุดรูปไว้ก่อน 🔒", "err");
+      else if (!passive && cfg.failOpen) { imgBypassOnce = true; if (OV) OV.toast("เชื่อมต่อไม่ได้ — วางรูปอีกครั้งเพื่อแนบ", "err"); }
+      return;
+    }
+    const d = result.decision, c = result.classification || {};
+    if (passive) {  // รูปวางไปแล้ว — เตือน/บันทึกอย่างเดียว
+      if (d === "allow") return;
+      if (d === "monitor") { if (OV) OV.toast(`บันทึกการวางรูป (${c.label || "Internal"})`); return; }
+      if (OV) OV.showModal({ decision: d, channelName: channelName(), label: c.label, risk: c.risk_score, reasons: c.reasons, coaching: result.coaching });
+      return;
+    }
+    if (d === "allow" || d === "monitor") { imgBypassOnce = true; if (OV) OV.toast("รูปผ่านการตรวจ ✓ วางอีกครั้งเพื่อแนบ"); return; }
+    if (OV) {
+      const choice = await OV.showModal({ decision: d, channelName: channelName(), label: c.label, risk: c.risk_score, reasons: c.reasons, coaching: result.coaching });
+      if (d === "warn" && choice === "confirm") { imgBypassOnce = true; OV.toast("วางรูปอีกครั้งเพื่อแนบ"); }
+    }
+    // block/redact → กันไว้ (ไม่อนุญาตวางซ้ำ)
+  }
+
   document.addEventListener("paste", (e) => {
     if (!cfg.enabled) return;
     const editor = e.target.closest && e.target.closest("[contenteditable],textarea,input")
@@ -246,13 +272,17 @@
     const dt = e.clipboardData;
     if (!dt) return;
 
-    // ภาพ (screenshot/สลิป/บัตร) — ตรวจด้วย Vision ถ้าเปิด AI
     const imgFiles = Array.from(dt.files || []).filter((f) => f.type.startsWith("image/"));
     const text = dt.getData("text/plain");
 
     if (imgFiles.length) {
-      e.preventDefault();
-      readImages(imgFiles).then((imgs) => enforcePaste(editor, text || "", imgs));
+      if (imgBypassOnce) { imgBypassOnce = false; return; }   // ผู้ใช้ยืนยันแล้ว → ปล่อยผ่าน
+      if (cfg.enforced) {
+        e.preventDefault();                                    // โหมดบังคับ: กันรูปไว้ตรวจก่อน
+        readImages(imgFiles).then((imgs) => handlePastedImage(editor, text || "", imgs, false));
+      } else {
+        readImages(imgFiles).then((imgs) => handlePastedImage(editor, text || "", imgs, true));  // ปกติ: ปล่อยรูป+ตรวจเบื้องหลัง
+      }
       return;
     }
     if (!text) return; // ไม่มีข้อความ = ปล่อย
@@ -307,9 +337,9 @@
     return new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => res(null); r.readAsDataURL(f); });
   }
 
-  // อ่านไฟล์: รูป -> Vision, ไฟล์ข้อความ -> เนื้อหา, อื่น ๆ -> แจ้งว่าตรวจอัตโนมัติไม่ได้
+  // อ่านไฟล์: รูป -> Vision, ไฟล์ข้อความ -> เนื้อหา, อื่น ๆ (PDF/Word/Excel) -> อ่านเนื้อหาไม่ได้
   async function collectFiles(files) {
-    const imgs = [], names = []; let text = "";
+    const imgs = [], names = []; let text = "", hasBinary = false;
     for (const f of files.slice(0, 4)) {
       names.push(f.name || "file");
       if (f.type && f.type.startsWith("image/")) {
@@ -317,54 +347,64 @@
       } else if (TEXT_EXT.test(f.name || "") || (f.type && f.type.startsWith("text/"))) {
         const t = await readAsText(f); if (t) text += (text ? "\n" : "") + t.slice(0, 20000);
       } else {
-        text += (text ? "\n" : "") + `[แนบไฟล์: ${f.name} — ตรวจเนื้อหาไฟล์ชนิดนี้อัตโนมัติไม่ได้ โปรดตรวจเอง]`;
+        hasBinary = true;  // ตรวจเนื้อหาในเบราว์เซอร์ไม่ได้ — ต้องซื่อสัตย์ ไม่เคลมว่าตรวจแล้ว
+        text += (text ? "\n" : "") + `[แนบไฟล์: ${f.name}]`;
       }
     }
-    return { imgs, names, text };
+    return { imgs, names, text, hasBinary };
   }
 
-  // คืน true = ควร "บล็อก" ไฟล์ (ล้าง input / กันวาง)
+  // ตรวจไฟล์ → คืน { risky, unverified }
+  //   risky = ควรบล็อก (พบข้อมูลลับ) · unverified = ไฟล์ที่ตรวจเนื้อหาไม่ได้ (PDF/Word/Excel)
   async function handleUpload(files) {
-    const { imgs, names, text } = await collectFiles(files);
-    if (!imgs.length && !text) return false;
-    const result = await inspect(text || ("แนบไฟล์: " + names.join(", ")), "upload", imgs);
-    if (!result) return !cfg.failOpen;   // เซิร์ฟเวอร์ล่ม: บล็อกถ้าโหมดบังคับ
+    const { imgs, names, text, hasBinary } = await collectFiles(files);
+    if (!imgs.length && !text) return { risky: false, unverified: false };
+    const bodyText = text || ("แนบไฟล์: " + names.join(", "));
+    const onlyBinary = hasBinary && !imgs.length &&
+      bodyText.replace(/\[แนบไฟล์:[^\]]*\]/g, "").trim() === "";
+    const result = await inspect(bodyText, "upload", imgs);
+    if (!result) return { risky: !cfg.failOpen, unverified: hasBinary };  // เซิร์ฟเวอร์ล่ม
     const d = result.decision, c = result.classification || {};
     if (d === "allow" || d === "monitor") {
       if (d === "monitor" && OV) OV.toast(`บันทึกไฟล์แนบ (${c.label || "Internal"})`);
-      return false;
+      return { risky: false, unverified: onlyBinary };
     }
-    if (!OV) return d !== "warn";
-    const choice = await OV.showModal({
-      decision: d, channelName: channelName(), label: c.label, risk: c.risk_score,
-      reasons: c.reasons, coaching: result.coaching,
-    });
-    if (d === "warn") return choice !== "confirm";   // ยืนยัน = ไม่บล็อก
-    return true;                                       // redact/block บนไฟล์ = บล็อก
+    if (OV) await OV.showModal({ decision: d, channelName: channelName(), label: c.label, risk: c.risk_score, reasons: c.reasons, coaching: result.coaching });
+    return { risky: true, unverified: onlyBinary };   // warn/redact/block บนไฟล์ = กันไว้
   }
 
-  // ปุ่มแนบไฟล์ (input[type=file]) — บล็อกได้จริงด้วยการล้างค่าก่อนกดส่ง
+  // ปุ่มแนบไฟล์ (input[type=file]) — ล้างค่าเมื่อเสี่ยง (best-effort: ได้ผลกับเว็บที่อัปโหลดตอนกดส่ง)
   document.addEventListener("change", (e) => {
     if (!cfg.enabled) return;
     const inp = e.target;
     if (!inp || inp.tagName !== "INPUT" || inp.type !== "file") return;
     const files = Array.from(inp.files || []);
     if (!files.length) return;
-    handleUpload(files).then((block) => {
-      if (block) { try { inp.value = ""; } catch (_) {} if (OV) OV.toast("บล็อกไฟล์แนบที่มีข้อมูลลับแล้ว 🛡️", "err"); }
+    handleUpload(files).then(({ risky, unverified }) => {
+      if (risky || (unverified && cfg.enforced)) {
+        try { inp.value = ""; } catch (_) {}
+        if (OV) OV.toast(risky ? "กันไฟล์ที่มีข้อมูลลับไว้แล้ว 🛡️" : "โหมดบังคับ: ไฟล์นี้ตรวจเนื้อหาไม่ได้ 🔒", "err");
+      } else if (unverified && OV) {
+        OV.toast("⚠️ ไฟล์ PDF/เอกสารนี้ ระบบตรวจเนื้อหาอัตโนมัติไม่ได้ — โปรดตรวจเอง", "err");
+      }
     });
   }, true);
 
-  // ลากไฟล์วาง — โหมดบังคับ: กันไว้ก่อน; โหมดปกติ: ตรวจ+เตือน+บันทึก
+  // ลากไฟล์วาง — โหมดบังคับ: กันไฟล์ไว้ตรวจก่อน (ไม่ถึงเว็บ); โหมดปกติ: ปล่อย+ตรวจ+เตือน
   document.addEventListener("drop", (e) => {
     if (!cfg.enabled) return;
     const dt = e.dataTransfer; if (!dt) return;
     const files = Array.from(dt.files || []); if (!files.length) return;
     if (cfg.enforced) {
       e.preventDefault(); e.stopImmediatePropagation();
-      if (OV) OV.toast("โหมดบังคับ: โปรดแนบไฟล์ด้วยปุ่มแนบไฟล์เพื่อให้ตรวจก่อน 🔒", "err");
+      handleUpload(files).then(({ risky, unverified }) => {
+        if (OV) OV.toast(risky ? "บล็อกไฟล์เสี่ยงแล้ว 🛡️"
+          : unverified ? "ไฟล์นี้ตรวจเนื้อหาไม่ได้ — โปรดแนบด้วยปุ่ม 📎"
+          : "ไฟล์ผ่านการตรวจ ✓ โปรดแนบด้วยปุ่ม 📎 เพื่อส่ง", "err");
+      });
+    } else {
+      handleUpload(files);   // ปกติ: ไฟล์ถึงเว็บแล้ว แต่ตรวจ+เตือน+บันทึก
     }
-    handleUpload(files);
   }, true);
 
   if (OV) OV.toast(`SentinelAI พร้อมป้องกันบน ${channelName()}`);

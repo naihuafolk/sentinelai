@@ -79,8 +79,9 @@ async def inspect(req: InspectRequest, org_id: int = 1) -> InspectResponse:
             "content_excerpt": excerpt,
         }
         db.insert_event(ev)
-        # แจ้งเตือน LINE ทันที (best-effort, ไม่รอผล ไม่บล็อกการตอบกลับ)
-        if action != Action.ALLOW and cls.risk_score >= 50:
+        # แจ้งเตือน LINE ทันที (best-effort) — ยิงทุกเหตุการณ์ที่ไม่ใช่ allow
+        # แล้วให้ maybe_alert คัดตามเกณฑ์ alert_min_risk ของแต่ละองค์กรเอง (ไม่ตั้ง floor ตายตัว)
+        if action != Action.ALLOW:
             try:
                 asyncio.create_task(line_alert.maybe_alert(org_id, ev))
             except RuntimeError:

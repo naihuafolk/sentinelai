@@ -35,9 +35,10 @@ def _token_for(org: dict) -> str:
 
 
 def verify_signature(body: bytes, signature: str) -> bool:
-    """ตรวจลายเซ็น webhook จาก LINE (ข้ามถ้ายังไม่ตั้ง channel secret)."""
+    """ตรวจลายเซ็น webhook จาก LINE — fail-closed: ถ้ายังไม่ตั้ง channel secret ปฏิเสธทั้งหมด
+    (กันคนปลอม event เมื่อเปิดบอทกลางแต่ลืมตั้ง secret)."""
     if not settings.line_secret:
-        return True
+        return False
     mac = hmac.new(settings.line_secret.encode(), body, hashlib.sha256).digest()
     return hmac.compare_digest(base64.b64encode(mac).decode(), signature or "")
 

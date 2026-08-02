@@ -58,10 +58,16 @@ class Settings:
     trial_days: int = _int("SENTINEL_TRIAL_DAYS", 14)
     # กันเอาไปรันมั่ว: บล็อกเมื่อ license ไม่ผ่าน (true) หรือแค่เตือน+ปล่อยผ่าน (false)
     enforce_license: bool = _bool("SENTINEL_ENFORCE_LICENSE", True)
+    # อนุญาต "องค์กรเริ่มต้น (id 1)" ให้ใช้งานได้ (สำหรับ local/dev เท่านั้น)
+    # โปรดักชันตั้ง False → คำขอที่ไม่มีคีย์ หรือใช้คีย์ dev จะถูกปฏิเสธ (กันคนใช้ AI เราฟรี)
+    allow_default_org: bool = _bool("SENTINEL_ALLOW_DEFAULT_ORG", False)
     # กันแชร์คีย์ (1 เครื่อง = 1 สิทธิ์): ถ้า "ลายนิ้วมือเครื่อง" เดียวถูกใช้จากไอพีมากกว่านี้
-    # ภายในหน้าต่างเวลา → ถือว่าแชร์คีย์ (แจ้งเตือน + บล็อกถ้า enforce_license)
-    share_max_ips: int = _int("SENTINEL_SHARE_MAX_IPS", 3)      # >3 ไอพี (คือ 4+) = สงสัยแชร์
+    # ภายในหน้าต่างเวลา → ถือว่าแชร์คีย์ (แจ้งเตือนเสมอ; บล็อกเฉพาะเมื่อ block_on_share=True)
+    share_max_ips: int = _int("SENTINEL_SHARE_MAX_IPS", 8)      # >8 ไอพี = สงสัยแชร์ (ลด false positive เน็ตมือถือ/CGNAT)
     share_window_min: int = _int("SENTINEL_SHARE_WINDOW_MIN", 20)  # หน้าต่างเวลา (นาที)
+    block_on_share: bool = _bool("SENTINEL_BLOCK_ON_SHARE", False)  # False = แค่แจ้งเตือน ไม่ hard-block (กันบล็อกลูกค้าจริงผิด)
+    # เพดานส่ง SMS แจ้ง Lead ต่อชั่วโมง (กันโดนสแปมฟอร์มจนเปลืองเงิน Twilio)
+    sms_max_per_hour: int = _int("SENTINEL_SMS_MAX_PER_HOUR", 20)
 
     # Stripe billing (ไม่ตั้งคีย์ = ปิดจ่ายเงินอัตโนมัติ ใช้ manual ผ่าน Super Admin ต่อได้)
     stripe_secret_key: str = os.getenv("STRIPE_SECRET_KEY", "").strip()

@@ -27,7 +27,8 @@ def _get_secret() -> str:
     s = os.getenv("SENTINEL_JWT_SECRET")
     if s:
         return s
-    f = settings.base_dir / ".jwt_secret"
+    # เก็บบนโฟลเดอร์เดียวกับ DB (โวลุ่มถาวร /data) เพื่อไม่ให้หายตอน redeploy
+    f = Path(settings.db_path).parent / ".jwt_secret"
     if f.exists():
         return f.read_text().strip()
     s = secrets.token_urlsafe(48)
@@ -109,16 +110,21 @@ async def get_current_user(authorization: str = Header(default="")) -> dict:
 
 async def get_org_from_key(x_sentinel_key: str = Header(default="")) -> dict:
     """ตรวจ API key ขององค์กร (Extension/Agent) -> คืน org.
-    ถ้าไม่ส่ง key มา ใช้ default org (id 1) เพื่อความเข้ากันได้กับการใช้งาน local."""
+    โปรดักชัน (allow_default_org=False): ต้องมีคีย์จริงเสมอ และห้ามใช้องค์กรเริ่มต้น (id 1)
+    เพื่อกันคนนอกใช้ AI/ทรัพยากรเราฟรีผ่าน default org."""
     if x_sentinel_key:
         org = db.get_org_by_api_key(x_sentinel_key.strip())
         if not org:
             raise HTTPException(401, "API key ขององค์กรไม่ถูกต้อง — ยังไม่ได้ซื้อ/ลงทะเบียนกับระบบ")
+        if org["id"] == 1 and not settings.allow_default_org:
+            raise HTTPException(401, "คีย์เริ่มต้น (dev) ใช้ในโปรดักชันไม่ได้ — โปรดใช้ Org Key ขององค์กรคุณ")
         return org
-    org = db.get_org(1)
-    if not org:
-        raise HTTPException(500, "ยังไม่ได้ตั้งค่าองค์กรเริ่มต้น")
-    return org
+    # ไม่ได้ส่งคีย์มา
+    if settings.allow_default_org:
+        org = db.get_org(1)
+        if org:
+            return org
+    raise HTTPException(401, "ต้องระบุ API key ขององค์กร (X-Sentinel-Key)")
 
 
 # ---- License enforcement (กันเอา API key ไปรันมั่ว) ----
@@ -179,7 +185,8 @@ def check_device_sharing(org: dict, device_id: str, name: str, share: dict) -> N
             db.record_license_alert(org["id"], device_id, name, int(share.get("distinct_ips", 0)))
         except Exception:
             pass
-    if settings.enforce_license:
+    # บล็อกจริงเฉพาะเมื่อเปิด block_on_share (ค่าเริ่มต้น False = แค่แจ้งเตือน กันบล็อกลูกค้าจริงผิด)
+    if settings.block_on_share:
         raise HTTPException(
             402,
             f"พบการใช้คีย์นี้จากหลายเครื่อง/ตำแหน่งพร้อมกัน ({share.get('distinct_ips')} ไอพี) "
@@ -187,11 +194,11 @@ def check_device_sharing(org: dict, device_id: str, name: str, share: dict) -> N
 
 
 def is_platform_admin(user: dict) -> bool:
+    # ปลอดภัย: อ้างอิงจาก role หรืออีเมลใน SENTINEL_ADMIN_EMAILS เท่านั้น
+    # (ตัด fallback "user.id == 1" ออก — กันคนแรกที่แอบสมัครกลายเป็นแอดมินคุมทุกองค์กร)
     if not user:
         return False
     if user.get("role") == "platform_admin":
-        return True
-    if user.get("id") == 1:  # ผู้ตั้งระบบคนแรก = เจ้าของแพลตฟอร์ม
         return True
     return (user.get("email") or "").lower() in settings.admin_email_set()
 
