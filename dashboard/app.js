@@ -284,6 +284,7 @@ function showApp() {
   updateHeader();
   route();
   refreshLicensePill();
+  refreshAdminNav();
 }
 
 function renderAuth(tab = "login") {
@@ -953,7 +954,7 @@ function gaugeSVG(score) {
 const routes = {
   overview: renderOverview, events: renderEvents, policies: renderPolicies,
   fingerprints: renderFingerprints, simulator: renderSimulator,
-  "response-scan": renderResponseScan, settings: renderSettings,
+  "response-scan": renderResponseScan, settings: renderSettings, admin: renderSuperAdmin,
 };
 function currentRoute() { return (location.hash.replace("#", "") || "overview"); }
 function route() {
@@ -2144,6 +2145,151 @@ async function loadNotify() {
       out.innerHTML = '<span style="color:var(--accent-2)">✓ บันทึกแล้ว</span>'; toast("บันทึกบอทของคุณแล้ว", "ok"); loadNotify();
     } catch (e) { out.innerHTML = '<span style="color:#ff9a9a">⛔ ' + esc(e.message || "ผิดพลาด") + "</span>"; }
   });
+}
+
+/* ============================ Super Admin (เจ้าของแพลตฟอร์ม) ============================ */
+async function refreshAdminNav() {
+  try {
+    const me = await api.get("/auth/me");
+    state.isAdmin = !!me.is_platform_admin;
+    const nav = $("#nav-admin");
+    if (nav) nav.style.display = state.isAdmin ? "" : "none";
+  } catch { /* ยังไม่ล็อกอิน/เชื่อมไม่ได้ */ }
+}
+
+function saStatusChip(s) {
+  const m = { active: ["#10b981", "ใช้งาน"], trial: ["#eab308", "ทดลอง"], suspended: ["#ef4444", "ระงับ"] };
+  const [c, t] = m[s] || ["#64748b", s || "-"];
+  return `<span style="color:${c};font-weight:700;font-size:12px">● ${t}</span>`;
+}
+
+async function renderSuperAdmin() {
+  if (state.isAdmin === false) { setView(pageHead("ผู้ดูแลระบบ", "") + '<div class="card"><p class="micro">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p></div>'); return; }
+  const inp = "width:100%;padding:9px 11px;background:#0b1220;border:1px solid #2a3a4f;border-radius:8px;color:#e6edf5;font-size:13px;font-family:inherit";
+  const lbl = "display:block;font-size:12px;font-weight:600;color:#b8c4d4;margin:0 0 5px";
+  setView(pageHead("ผู้ดูแลระบบ (Super Admin)", "จัดการลูกค้า · สร้างบัญชี · ดู Leads · ความปลอดภัยทั้งแพลตฟอร์ม") + `
+    <div id="sa-ov" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px">${loadingBlock()}</div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-head"><h2 class="card-title">➕ สร้างบัญชีลูกค้าใหม่</h2></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:760px">
+        <div><label style="${lbl}">ชื่อบริษัท/องค์กร *</label><input id="co-name" style="${inp}" placeholder="เช่น บริษัท เอบีซี จำกัด"/></div>
+        <div><label style="${lbl}">อีเมลผู้ดูแล (ฝั่งลูกค้า) *</label><input id="co-email" style="${inp}" placeholder="admin@company.co.th"/></div>
+        <div><label style="${lbl}">แพ็ก</label><select id="co-plan" style="${inp}"><option value="starter">STARTER</option><option value="business" selected>BUSINESS</option><option value="enterprise">ENTERPRISE</option></select></div>
+        <div><label style="${lbl}">จำนวนเครื่อง (seats)</label><input id="co-seats" type="number" min="1" value="10" style="${inp}"/></div>
+        <div><label style="${lbl}">อายุ (วัน)</label><input id="co-days" type="number" min="1" value="365" style="${inp}"/></div>
+        <div style="display:flex;align-items:flex-end"><button class="btn btn-primary" id="co-submit" style="width:100%">สร้างบัญชี + ออก Org Key</button></div>
+      </div>
+      <div id="co-result" style="margin-top:14px"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-head"><h2 class="card-title">🏢 องค์กรทั้งหมด</h2></div>
+      <div id="sa-orgs">${loadingBlock()}</div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card"><div class="card-head"><h2 class="card-title">📇 Leads (ฟอร์มติดต่อ)</h2></div><div id="sa-leads">${loadingBlock()}</div></div>
+      <div class="card"><div class="card-head"><h2 class="card-title">🚨 เหตุการณ์เสี่ยง (ทุกองค์กร)</h2></div><div id="sa-feed">${loadingBlock()}</div></div>
+    </div>`);
+  $("#co-submit")?.addEventListener("click", saCreateOrg);
+  saLoadOverview(); saLoadOrgs(); saLoadLeads(); saLoadFeed();
+}
+
+async function saCreateOrg() {
+  const name = $("#co-name").value.trim(), email = $("#co-email").value.trim();
+  const res = $("#co-result");
+  if (!name || !email) { res.innerHTML = '<span style="color:#ffcf70">กรอกชื่อบริษัทและอีเมลให้ครบ</span>'; return; }
+  const btn = $("#co-submit"); btn.disabled = true; res.textContent = "กำลังสร้าง…";
+  try {
+    const r = await api.post("/admin/orgs", { org_name: name, email, plan: $("#co-plan").value,
+      seats: Number($("#co-seats").value) || 10, valid_days: Number($("#co-days").value) || 365 });
+    res.innerHTML = `
+      <div style="background:#0b1f16;border:1px solid #14532d;border-radius:12px;padding:16px">
+        <div style="font-weight:800;color:#34d399;margin-bottom:8px">✅ สร้างบัญชีสำเร็จ! ส่งข้อมูลนี้ให้ลูกค้า:</div>
+        <div style="font-size:13px;line-height:2;color:#e6edf5">
+          🔑 <b>Org Key:</b> <code style="background:#111c2e;padding:2px 7px;border-radius:5px">${esc(r.org_key)}</code>
+              <button class="btn btn-sm btn-ghost" id="co-copy">คัดลอก</button><br>
+          👤 <b>อีเมลล็อกอิน:</b> ${esc(r.email)}<br>
+          🔒 <b>รหัสผ่านชั่วคราว:</b> <code style="background:#111c2e;padding:2px 7px;border-radius:5px">${esc(r.temp_password)}</code><br>
+          📅 <b>ใช้ได้ถึง:</b> ${esc((r.valid_until || "").slice(0, 10))}
+        </div>
+        <div class="micro" style="margin-top:8px">แจ้งลูกค้า: เข้าสู่ระบบด้วยอีเมล+รหัสนี้ (ควรเปลี่ยนรหัส) · เอา Org Key ไปวางใน Extension ทุกเครื่อง</div>
+      </div>`;
+    $("#co-copy")?.addEventListener("click", () => { navigator.clipboard.writeText(r.org_key); toast("คัดลอก Org Key แล้ว", "ok"); });
+    toast("สร้างบัญชีลูกค้าแล้ว 🎉", "ok");
+    $("#co-name").value = ""; $("#co-email").value = "";
+    saLoadOrgs(); saLoadOverview();
+  } catch (e) { res.innerHTML = '<span style="color:#ff9a9a">⛔ ' + esc(e.message || "สร้างไม่สำเร็จ") + "</span>"; }
+  finally { btn.disabled = false; }
+}
+
+async function saLoadOverview() {
+  const el = $("#sa-ov"); if (!el) return;
+  try {
+    const o = await api.get("/admin/overview");
+    const cards = [["🏢 องค์กร", o.total_orgs], ["✅ ใช้งาน", o.active], ["🧪 ทดลอง", o.trial],
+      ["🚫 ระงับ", o.suspended], ["📋 เหตุการณ์", fmtNum(o.total_events)], ["⛔ บล็อก", fmtNum(o.total_blocks)], ["💻 เครื่อง", fmtNum(o.total_devices)]];
+    el.innerHTML = cards.map(([l, v]) =>
+      `<div style="background:#0f1826;border:1px solid #25303f;border-radius:12px;padding:14px 16px"><div style="font-size:23px;font-weight:800;color:#f1f5f9">${v}</div><div style="font-size:11.5px;color:#8b98a8">${l}</div></div>`).join("");
+  } catch (e) { if (e.status !== 401) el.innerHTML = connError(e); }
+}
+
+async function saLoadOrgs() {
+  const el = $("#sa-orgs"); if (!el) return;
+  try {
+    const orgs = await api.get("/admin/orgs");
+    if (!orgs.length) { el.innerHTML = '<p class="micro">ยังไม่มีองค์กร — สร้างบัญชีลูกค้าด้านบน</p>'; return; }
+    el.innerHTML = `<div class="table-wrap"><table class="tbl"><thead><tr><th>องค์กร</th><th>แพ็ก</th><th>สถานะ</th><th>เครื่อง</th><th>หมดอายุ</th><th>Org Key</th><th>จัดการ</th></tr></thead><tbody>${
+      orgs.map(o => `<tr>
+        <td><b>${esc(o.name)}</b><div class="micro">#${o.id}</div></td>
+        <td>${esc(planTH(o.plan))}</td>
+        <td>${saStatusChip(o.status)}</td>
+        <td class="mono">${o.devices}/${o.seats}</td>
+        <td class="mono">${(o.valid_until || "-").slice(0, 10)}</td>
+        <td><code style="font-size:11px">${esc((o.api_key || "").slice(0, 12))}…</code> <button class="btn btn-sm btn-ghost sa-copy" data-k="${esc(o.api_key)}">คัดลอก</button></td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-sm btn-ghost sa-renew" data-id="${o.id}">+1ปี</button>
+          <button class="btn btn-sm btn-ghost sa-susp" data-id="${o.id}" data-st="${esc(o.status)}">${o.status === "suspended" ? "เปิด" : "ระงับ"}</button>
+          <button class="btn btn-sm btn-ghost sa-seat" data-id="${o.id}" data-seat="${o.seats}">seat</button>
+        </td></tr>`).join("")
+    }</tbody></table></div>`;
+    el.querySelectorAll(".sa-copy").forEach(b => b.addEventListener("click", () => { navigator.clipboard.writeText(b.dataset.k); toast("คัดลอก Org Key แล้ว", "ok"); }));
+    el.querySelectorAll(".sa-renew").forEach(b => b.addEventListener("click", () => saUpdateOrg(b.dataset.id, { valid_until: new Date(Date.now() + 365 * 864e5).toISOString().replace(/\.\d+Z$/, "Z") })));
+    el.querySelectorAll(".sa-susp").forEach(b => b.addEventListener("click", () => saUpdateOrg(b.dataset.id, { status: b.dataset.st === "suspended" ? "active" : "suspended" })));
+    el.querySelectorAll(".sa-seat").forEach(b => b.addEventListener("click", () => { const n = prompt("จำนวนเครื่อง (seats):", b.dataset.seat); if (n) saUpdateOrg(b.dataset.id, { seats: Number(n) }); }));
+  } catch (e) { if (e.status !== 401) el.innerHTML = connError(e); }
+}
+
+async function saUpdateOrg(id, patch) {
+  try { await api.put("/admin/orgs/" + id, patch); toast("อัปเดตแล้ว", "ok"); saLoadOrgs(); saLoadOverview(); }
+  catch (e) { toast(e.message || "อัปเดตไม่สำเร็จ", "err"); }
+}
+
+async function saLoadLeads() {
+  const el = $("#sa-leads"); if (!el) return;
+  try {
+    const leads = (await api.get("/admin/leads")).leads || [];
+    if (!leads.length) { el.innerHTML = '<p class="micro">ยังไม่มี Lead</p>'; return; }
+    el.innerHTML = `<div class="table-wrap"><table class="tbl"><thead><tr><th>เวลา</th><th>ชื่อ</th><th>ธุรกิจ</th><th>เครื่อง</th><th>ติดต่อ</th></tr></thead><tbody>${
+      leads.map(l => `<tr><td class="mono">${esc((l.ts || "").slice(0, 16).replace("T", " "))}</td><td>${esc(l.name)}</td><td>${esc(l.business)}</td><td>${esc(l.seats || "-")}</td><td>${esc(l.contact)}</td></tr>`).join("")
+    }</tbody></table></div>`;
+  } catch (e) { if (e.status !== 401) el.innerHTML = connError(e); }
+}
+
+async function saLoadFeed() {
+  const el = $("#sa-feed"); if (!el) return;
+  try {
+    const items = (await api.get("/admin/security-feed?min_risk=60&limit=30")).items || [];
+    if (!items.length) { el.innerHTML = '<p class="micro">ยังไม่มีเหตุการณ์เสี่ยงสูง</p>'; return; }
+    el.innerHTML = items.map(e => `
+      <div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #25303f">
+        ${decisionBadge(e.decision)}
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;color:#f1f5f9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((e.reasons || ["-"])[0])}</div>
+          <div class="micro">${esc(e.org_name || "-")} · ${esc(e.department || e.user || "")} · เสี่ยง ${e.risk_score}</div>
+        </div></div>`).join("");
+  } catch (e) { if (e.status !== 401) el.innerHTML = connError(e); }
 }
 
 /* ---------------------------- Init ---------------------------- */

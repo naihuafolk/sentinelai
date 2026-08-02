@@ -33,7 +33,7 @@ from .classifier.fingerprint import get_index
 from .config import settings
 from .policy.db_bridge import invalidate as invalidate_policies
 from .schemas import (
-    AuthResponse, ClassifyOnlyResponse, EventPage, FingerprintOut, Health,
+    AdminCreateOrg, AuthResponse, ClassifyOnlyResponse, EventPage, FingerprintOut, Health,
     CheckoutRequest, InspectRequest, InspectResponse, Label, LicenseUpdate, LoginRequest,
     OrgAdminOut, OrgOut, Policy, PolicyCreate, ResponseScanRequest, ResponseScanResult,
     SignupRequest, SimulateRequest, Stats, UserOut,
@@ -116,7 +116,8 @@ async def login(req: LoginRequest, request: Request):
 
 @app.get(f"{API}/auth/me", tags=["auth"])
 async def me(ctx: dict = Depends(auth.get_current_user)):
-    return {"user": _user_out(ctx["user"]), "org": _org_out(ctx["org"])}
+    return {"user": _user_out(ctx["user"]), "org": _org_out(ctx["org"]),
+            "is_platform_admin": auth.is_platform_admin(ctx["user"])}
 
 
 # ============================ Core (Extension/Agent via org API key) ====
@@ -487,6 +488,26 @@ async def health(check_ai: bool = False):
 async def admin_list_orgs(ctx: dict = Depends(auth.get_platform_admin)):
     """รายชื่อองค์กรทั้งหมด + สถิติ (เฉพาะ Super Admin)."""
     return db.list_all_orgs()
+
+
+@app.post(f"{API}/admin/orgs", tags=["admin"])
+async def admin_create_org(req: AdminCreateOrg, ctx: dict = Depends(auth.get_platform_admin)):
+    """สร้างองค์กรลูกค้าใหม่ + ผู้ดูแลฝั่งลูกค้า → คืน Org Key และรหัสผ่านชั่วคราว."""
+    email = req.email.lower().strip()
+    if db.get_user_by_email(email):
+        raise HTTPException(409, "อีเมลนี้ถูกใช้แล้ว")
+    api_key = auth.new_org_api_key()
+    valid_until = (datetime.now(timezone.utc) + timedelta(days=max(1, req.valid_days))).isoformat(timespec="seconds")
+    org_id = db.create_org(req.org_name.strip(), api_key, plan=req.plan, status="active",
+                           seats=max(1, req.seats), quota_month=max(0, req.quota_month), valid_until=valid_until)
+    seed_org_defaults(org_id)
+    temp_pw = secrets.token_urlsafe(9)
+    try:
+        db.create_user(org_id, email, auth.hash_password(temp_pw), req.org_name.strip(), role="admin")
+    except sqlite3.IntegrityError:
+        raise HTTPException(409, "อีเมลนี้ถูกใช้แล้ว")
+    return {"ok": True, "org_id": org_id, "org_key": api_key, "email": email,
+            "temp_password": temp_pw, "valid_until": valid_until}
 
 
 @app.put(f"{API}/admin/orgs/{{oid}}", tags=["admin"])

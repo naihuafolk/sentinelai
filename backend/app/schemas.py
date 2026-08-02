@@ -238,10 +238,20 @@ class OrgAdminOut(BaseModel):
     quota_month: int
     valid_until: Optional[str] = None
     created_at: Optional[str] = None
+    api_key: str = ""          # Org Key (โชว์เฉพาะแอดมินแพลตฟอร์ม)
     users: int = 0
     devices: int = 0
     events: int = 0
     blocks: int = 0
+
+
+class AdminCreateOrg(BaseModel):
+    org_name: str
+    email: str                 # อีเมลผู้ดูแลฝั่งลูกค้า (ไว้ล็อกอินดูแดชบอร์ดของตัวเอง)
+    plan: str = "business"
+    seats: int = 10
+    quota_month: int = 20000
+    valid_days: int = 365      # อายุ license (วัน)
 
 
 class DeviceOut(BaseModel):
