@@ -150,15 +150,25 @@ _AI_APPS = ("chatgpt", "claude", "copilot", "gemini", "deepseek", "grok", "perpl
 
 
 def foreground_app() -> tuple[str, bool]:
-    """คืน (ชื่อหน้าต่างที่โฟกัส, เป็นแอป AI ไหม). ใช้ได้บน Windows; อื่น ๆ คืน unknown."""
+    """คืน (ชื่อหน้าต่าง/แอปที่โฟกัส, เป็นแอป AI ไหม). รองรับ Windows + macOS; อื่น ๆ คืน unknown."""
+    title = "unknown"
     try:
-        import ctypes
-        u = ctypes.windll.user32
-        h = u.GetForegroundWindow()
-        ln = u.GetWindowTextLengthW(h)
-        buf = ctypes.create_unicode_buffer(ln + 1)
-        u.GetWindowTextW(h, buf, ln + 1)
-        title = (buf.value or "").strip() or "unknown"
+        sysname = platform.system()
+        if sysname == "Windows":
+            import ctypes
+            u = ctypes.windll.user32
+            h = u.GetForegroundWindow()
+            ln = u.GetWindowTextLengthW(h)
+            buf = ctypes.create_unicode_buffer(ln + 1)
+            u.GetWindowTextW(h, buf, ln + 1)
+            title = (buf.value or "").strip() or "unknown"
+        elif sysname == "Darwin":
+            import subprocess
+            out = subprocess.check_output(
+                ["osascript", "-e",
+                 'tell application "System Events" to get name of first application process whose frontmost is true'],
+                text=True, timeout=3)
+            title = (out or "").strip() or "unknown"
     except Exception:
         title = "unknown"
     is_ai = any(a in title.lower() for a in _AI_APPS)

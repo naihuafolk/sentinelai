@@ -1962,8 +1962,9 @@ async function renderSettings() {
       <div class="card-head"><h2 class="card-title">⬇️ ดาวน์โหลดตัวติดตั้ง</h2></div>
       <p class="micro" style="margin:0 0 12px">โหลดไปติดตั้งบนเครื่องพนักงาน แล้วใส่ API key ด้านบน</p>
       <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <a class="btn btn-primary" href="/api/v1/download/extension.zip" download>🌐 ดาวน์โหลด Browser Extension (Chrome/Edge)</a>
-        <a class="btn btn-ghost" href="/api/v1/download/agent.zip" download>💻 ดาวน์โหลด Endpoint Agent (คอม)</a>
+        <a class="btn btn-primary" href="/api/v1/download/extension.zip" download>🌐 Extension (Chrome/Edge/Brave)</a>
+        <a class="btn btn-ghost" href="/api/v1/download/extension-firefox.zip" download>🦊 Extension (Firefox)</a>
+        <a class="btn btn-ghost" href="/api/v1/download/agent.zip" download>💻 Endpoint Agent (Windows + Mac)</a>
         <a class="btn btn-ghost" href="/guide.html" target="_blank">📘 คู่มือใช้งาน + สถานการณ์จริง</a>
       </div>
     </div>

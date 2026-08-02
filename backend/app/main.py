@@ -531,7 +531,7 @@ _ZIP_SKIP_SUFFIX = (".db", ".pyc", ".key", ".pem", ".env")
 _ZIP_SKIP_NAME = {".jwt_secret", "sentinel.env", ".env"}
 
 
-def _zip_dir(folder: _Path, arc_root: str = "") -> bytes:
+def _zip_dir(folder: _Path, arc_root: str = "", manifest_override: Optional[dict] = None) -> bytes:
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         for p in folder.rglob("*"):
@@ -541,16 +541,39 @@ def _zip_dir(folder: _Path, arc_root: str = "") -> bytes:
             if p.name in _ZIP_SKIP_NAME or p.name.endswith(_ZIP_SKIP_SUFFIX) or p.name.startswith(".env"):
                 continue
             rel = p.relative_to(folder).as_posix()
-            z.write(p, f"{arc_root}/{rel}" if arc_root else rel)
+            arc = f"{arc_root}/{rel}" if arc_root else rel
+            if manifest_override is not None and rel == "manifest.json":
+                z.writestr(arc, json.dumps(manifest_override, ensure_ascii=False, indent=2))
+            else:
+                z.write(p, arc)
     buf.seek(0)
     return buf.read()
 
 
+def _firefox_manifest(man: dict) -> dict:
+    """แปลง manifest ของ Chrome ให้ใช้กับ Firefox (MV3)."""
+    man = json.loads(json.dumps(man))  # deep copy
+    man["browser_specific_settings"] = {"gecko": {"id": "sentinelai@sentinelai.help", "strict_min_version": "121.0"}}
+    man["background"] = {"scripts": ["background.js"]}  # Firefox MV3 event page (เข้ากันได้กว้าง)
+    man["host_permissions"] = [h for h in man.get("host_permissions", [])
+                               if "127.0.0.1" not in h and "localhost" not in h]
+    return man
+
+
 @app.get(f"{API}/download/{{what}}.zip", tags=["system"])
 async def download_package(what: str):
-    """ดาวน์โหลดตัวติดตั้ง: extension (เบราว์เซอร์) หรือ agent (คอม)."""
+    """ดาวน์โหลดตัวติดตั้ง: extension (Chrome/Edge), extension-firefox (Firefox), หรือ agent (คอม)."""
     root = settings.base_dir.parent
-    mapping = {"extension": root / "extension", "agent": root / "agent"}
+    ext_dir = root / "extension"
+    # Firefox: ใช้โค้ด extension เดิม แต่สลับ manifest เป็นแบบ Firefox
+    if what == "extension-firefox":
+        if not ext_dir.exists():
+            raise HTTPException(404, "ไม่พบแพ็กเกจ")
+        man = _firefox_manifest(json.loads((ext_dir / "manifest.json").read_text(encoding="utf-8")))
+        data = _zip_dir(ext_dir, "", manifest_override=man)
+        return StreamingResponse(iter([data]), media_type="application/zip",
+                                 headers={"Content-Disposition": "attachment; filename=sentinelai-firefox.zip"})
+    mapping = {"extension": ext_dir, "agent": root / "agent"}
     folder = mapping.get(what)
     if not folder or not folder.exists():
         raise HTTPException(404, "ไม่พบแพ็กเกจ")
