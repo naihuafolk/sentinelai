@@ -110,6 +110,27 @@ async def maybe_alert(org_id: int, ev: dict[str, Any]) -> None:
         log.warning("LINE alert error: %s", e)
 
 
+async def notify_lead_line(lead: dict[str, Any]) -> None:
+    """แจ้ง Lead ใหม่เข้า LINE ทีมขาย (ใช้บอทกลาง + LEAD_NOTIFY_LINE_TO). best-effort, ไม่ throw."""
+    try:
+        token = settings.line_token
+        to = settings.lead_notify_line_to
+        if not token or not to:
+            return
+        text = (
+            "🆕 มีคนสมัคร/ติดต่อทีมงาน (SentinelAI)\n"
+            f"ชื่อ: {lead.get('name', '')}\n"
+            f"ธุรกิจ: {lead.get('business', '')}\n"
+            f"จำนวนเครื่อง: {lead.get('seats', '')}\n"
+            f"ติดต่อกลับ: {lead.get('contact', '')}"
+        )
+        ok, detail = await _push(token, to, text)
+        if not ok:
+            log.info("lead LINE not sent: %s", detail)
+    except Exception as e:  # pragma: no cover
+        log.warning("notify_lead_line error: %s", e)
+
+
 async def send_test(org: dict) -> tuple[bool, str]:
     """ส่งข้อความทดสอบ (ปุ่ม 'ส่งทดสอบ' ในแดชบอร์ด)."""
     token = _token_for(org)

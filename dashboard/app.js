@@ -298,7 +298,7 @@ function renderAuth(tab = "login") {
         </div>
         <nav class="lp-nav-actions" aria-label="เมนู">
           <a class="lp-navlink" href="#lp-articles">บทความ</a>
-          <a class="lp-navlink" href="#lp-pricing">ราคา</a>
+          <a class="lp-navlink" href="#lp-pricing">แพ็กเกจ</a>
           <a class="lp-navlink" href="#" data-lp-cta="login">เข้าสู่ระบบ</a>
           <button type="button" class="btn btn-primary btn-sm" data-lp-cta="contact">ติดต่อทีมงาน</button>
         </nav>
@@ -387,16 +387,35 @@ function renderAuth(tab = "login") {
         </div>
       </section>
 
+      <!-- ===== ความน่าเชื่อถือ ===== -->
+      <section class="lp-section">
+        <div class="lp-sec-head">
+          <h2 class="lp-h2">ออกแบบมาเพื่อความน่าเชื่อถือ</h2>
+          <p class="lp-sec-sub">ปกป้องข้อมูลลูกค้าของคุณด้วยมาตรฐานความปลอดภัยระดับองค์กร</p>
+        </div>
+        <div class="lp-trust-grid">
+          <div class="lp-trust-card"><div class="lp-tc-ico">🔒</div><h3>เข้ารหัสระหว่างส่ง</h3><p>ข้อมูลทุกชิ้นเข้ารหัส (TLS/HTTPS) ระหว่างเดินทางเสมอ</p></div>
+          <div class="lp-trust-card"><div class="lp-tc-ico">🗄️</div><h3>ไม่เก็บเนื้อหาดิบ</h3><p>ค่าเริ่มต้นเก็บเพียง metadata (ระดับเสี่ยง/การตัดสิน) ไม่ใช่เนื้อหาจริง</p></div>
+          <div class="lp-trust-card"><div class="lp-tc-ico">⚖️</div><h3>สอดคล้อง PDPA</h3><p>ออกแบบตามหลัก Privacy-by-Design พร้อมรองรับสิทธิ์เจ้าของข้อมูล</p></div>
+          <div class="lp-trust-card"><div class="lp-tc-ico">📋</div><h3>Audit Log ครบถ้วน</h3><p>บันทึกทุกเหตุการณ์เป็นหลักฐานตรวจสอบย้อนหลังได้</p></div>
+          <div class="lp-trust-card"><div class="lp-tc-ico">🇹🇭</div><h3>ทีมงานไทย</h3><p>ซัพพอร์ตภาษาไทย เข้าใจกฎหมายและบริบทองค์กรไทย</p></div>
+          <div class="lp-trust-card"><div class="lp-tc-ico">🔑</div><h3>ข้อมูลเป็นของคุณ</h3><p>เราไม่ขายและไม่แชร์ข้อมูลของคุณให้บุคคลที่สามเพื่อการตลาด</p></div>
+        </div>
+        <div class="lp-assure">
+          <span>🔐 TLS/HTTPS</span><span>🛡️ Privacy-by-Design</span><span>⚖️ PDPA Ready</span><span>📊 Audit Trail</span><span>🇹🇭 Thai Support</span>
+        </div>
+      </section>
+
       <!-- ===== PRICING ===== -->
       <section class="lp-section" id="lp-pricing">
         <div class="lp-sec-head">
-          <h2 class="lp-h2">แพ็กเกจราคา</h2>
-          <p class="lp-sec-sub">คิดค่าใช้จ่ายแบบรายเครื่อง/เดือน — จ่ายเท่าที่ใช้จริง</p>
+          <h2 class="lp-h2">แพ็กเกจการใช้งาน</h2>
+          <p class="lp-sec-sub">เลือกแพ็กเกจที่เหมาะกับองค์กรของคุณ — ติดต่อทีมงานเพื่อรับใบเสนอราคาและนัดเดโม</p>
         </div>
         <div class="lp-pricing">
           <article class="lp-plan">
             <div class="lp-plan-name">STARTER</div>
-            <div class="lp-plan-price"><span class="lp-plan-amt">฿199</span><span class="lp-plan-unit">/เครื่อง/เดือน</span></div>
+            <div class="lp-plan-price"><span class="lp-plan-amt" style="font-size:1.3rem">ติดต่อสอบถาม</span></div>
             <div class="lp-plan-cap">สำหรับทีมเล็ก</div>
             <ul class="lp-plan-feats">
               <li>สูงสุด 5 เครื่อง</li>
@@ -410,7 +429,7 @@ function renderAuth(tab = "login") {
           <article class="lp-plan lp-plan--hot">
             <div class="lp-plan-badge">แนะนำ</div>
             <div class="lp-plan-name">BUSINESS</div>
-            <div class="lp-plan-price"><span class="lp-plan-amt">฿149</span><span class="lp-plan-unit">/เครื่อง/เดือน</span></div>
+            <div class="lp-plan-price"><span class="lp-plan-amt" style="font-size:1.3rem">ติดต่อสอบถาม</span></div>
             <div class="lp-plan-cap">ยอดนิยม — สำหรับธุรกิจที่กำลังเติบโต</div>
             <ul class="lp-plan-feats">
               <li>6–50 เครื่อง</li>
@@ -436,7 +455,7 @@ function renderAuth(tab = "login") {
             <button type="button" class="btn btn-ghost btn-block" data-lp-cta="contact">ติดต่อทีมงาน</button>
           </article>
         </div>
-        <p class="lp-price-note">* ราคาข้างต้นเป็น <b>ตัวอย่าง</b> ปรับเปลี่ยนได้ · ยังไม่รวมภาษีมูลค่าเพิ่ม (VAT)</p>
+        <p class="lp-price-note">💬 ราคาปรับตามจำนวนเครื่องและความต้องการขององค์กร — ติดต่อทีมงานเพื่อรับใบเสนอราคาที่เหมาะสม</p>
       </section>
 
       <style>
@@ -459,6 +478,15 @@ function renderAuth(tab = "login") {
         .lp-cf-field input{padding:11px 13px;background:rgba(11,18,32,.7);border:1px solid rgba(148,163,184,.25);border-radius:10px;color:#e6edf5;font-size:14px;font-family:inherit;width:100%}
         .lp-cf-field input:focus{outline:none;border-color:#10b981}
         .lp-cf-msg{text-align:center;font-size:14px;min-height:20px;font-weight:600}
+        .lp-trust-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+        @media(max-width:800px){.lp-trust-grid{grid-template-columns:1fr 1fr}}
+        @media(max-width:520px){.lp-trust-grid{grid-template-columns:1fr}}
+        .lp-trust-card{background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.16);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:7px}
+        .lp-tc-ico{width:44px;height:44px;border-radius:12px;background:rgba(16,185,129,.13);border:1px solid rgba(52,211,153,.3);display:flex;align-items:center;justify-content:center;font-size:22px}
+        .lp-trust-card h3{font-size:15.5px;font-weight:800;color:#f1f5f9;margin:4px 0 0}
+        .lp-trust-card p{font-size:13px;color:#a9b8cc;line-height:1.55;margin:0}
+        .lp-assure{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:8px}
+        .lp-assure span{font-size:12.5px;font-weight:600;color:#cbd5e1;background:rgba(255,255,255,.04);border:1px solid rgba(148,163,184,.2);padding:7px 14px;border-radius:999px}
       </style>
 
       <!-- ===== บทความ (แฝงขาย) ===== -->
@@ -542,10 +570,10 @@ function renderAuth(tab = "login") {
             <div class="auth-tagline">ป้องกันข้อมูลลับองค์กรรั่วไหลสู่ AI</div>
           </div>
           <div class="auth-tabs">
-            <button class="auth-tab ${tab === "login" ? "active" : ""}" data-tab="login">เข้าสู่ระบบ</button>
-            <button class="auth-tab ${tab === "signup" ? "active" : ""}" data-tab="signup">สมัครใช้งาน</button>
+            <button class="auth-tab active" data-tab="login" style="flex:1">เข้าสู่ระบบ</button>
           </div>
           <div id="auth-form-wrap"></div>
+          <div class="auth-foot" style="text-align:center">ยังไม่มีบัญชี? <a href="#lp-contact" data-lp-cta="contact" style="color:#34d399;font-weight:700">ติดต่อฝ่ายขายเพื่อเปิดใช้งาน →</a></div>
           <div class="auth-foot">🔒 ปลอดภัยด้วยหลัก Privacy-by-Design · เก็บเฉพาะ metadata (PDPA)</div>
         </div>
       </section>

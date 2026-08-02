@@ -365,8 +365,10 @@ async def contact(payload: dict = Body(...)):
         raise HTTPException(400, "กรุณากรอกชื่อ ธุรกิจ และช่องทางติดต่อกลับ")
     lead = {"name": name, "business": business, "seats": seats, "contact": con}
     db.insert_lead(name, business, seats, con)
+    # แจ้งเตือนทีมขายทั้งทาง SMS และ LINE (best-effort ทั้งคู่)
     try:
         asyncio.create_task(sms.notify_lead(lead))
+        asyncio.create_task(line_alert.notify_lead_line(lead))
     except RuntimeError:
         pass
     return {"ok": True}

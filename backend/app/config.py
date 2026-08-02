@@ -86,7 +86,8 @@ class Settings:
     twilio_sid: str = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
     twilio_token: str = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
     twilio_from: str = os.getenv("TWILIO_FROM", "").strip()        # เบอร์/ผู้ส่งของ Twilio
-    lead_notify_phone: str = os.getenv("LEAD_NOTIFY_PHONE", "+66987893988").strip()  # เบอร์รับแจ้งเตือน
+    lead_notify_phone: str = os.getenv("LEAD_NOTIFY_PHONE", "+66987893988").strip()  # เบอร์รับแจ้งเตือน (SMS)
+    lead_notify_line_to: str = os.getenv("LEAD_NOTIFY_LINE_TO", "").strip()  # userId/groupId รับแจ้ง Lead ทาง LINE
 
     @property
     def sms_enabled(self) -> bool:
