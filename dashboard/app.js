@@ -576,6 +576,7 @@ function renderAuth(tab = "login") {
           <div id="auth-form-wrap"></div>
           <div class="auth-foot" style="text-align:center">ยังไม่มีบัญชี? <a href="#lp-contact" data-lp-cta="contact" style="color:#34d399;font-weight:700">ติดต่อฝ่ายขายเพื่อเปิดใช้งาน →</a></div>
           <div class="auth-foot">🔒 ปลอดภัยด้วยหลัก Privacy-by-Design · เก็บเฉพาะ metadata (PDPA)</div>
+          <div class="auth-foot" style="text-align:center;margin-top:2px"><a href="#" id="owner-signup" style="color:#64748b;font-size:11px">เจ้าของระบบ · สร้างบัญชีผู้ดูแลครั้งแรก</a></div>
         </div>
       </section>
 
@@ -591,6 +592,7 @@ function renderAuth(tab = "login") {
       </footer>
     </div>`;
   $$(".auth-tab", el).forEach((b) => b.addEventListener("click", () => renderAuth(b.dataset.tab)));
+  $("#owner-signup")?.addEventListener("click", (e) => { e.preventDefault(); goAuth("signup"); });
   // ปุ่ม CTA บนหน้า Landing → เลื่อน/โฟกัสไปยังการ์ดสมัคร-เข้าสู่ระบบ (ไม่แตะ logic ของ auth)
   $$("[data-lp-cta]", el).forEach((b) => b.addEventListener("click", (e) => {
     e.preventDefault();

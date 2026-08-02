@@ -83,6 +83,10 @@ async def signup(req: SignupRequest, request: Request):
     """สมัครใช้งาน — สร้างองค์กรใหม่ + ผู้ดูแล + คืน token และ API key ขององค์กร."""
     if not ratelimit.allow("signup:" + auth.client_ip(request), 5, 300):
         raise HTTPException(429, "สมัครบ่อยเกินไป โปรดลองใหม่ภายหลัง")
+    email_lc = req.email.lower().strip()
+    # sales-led: ปิดสมัครเองสาธารณะ ยกเว้นอีเมลผู้ดูแล (ให้เจ้าของสร้างบัญชีแอดมินตัวเองได้)
+    if not settings.public_signup and email_lc not in settings.admin_email_set():
+        raise HTTPException(403, "การเปิดใช้งานทำผ่านฝ่ายขาย — กรุณาติดต่อทีมงาน")
     if db.get_user_by_email(req.email):
         raise HTTPException(409, "อีเมลนี้ถูกใช้สมัครแล้ว")
     api_key = auth.new_org_api_key()

@@ -55,6 +55,8 @@ class Settings:
     fleet_size: int = _int("SENTINEL_FLEET_SIZE", 0)
     # SaaS licensing
     admin_emails: str = os.getenv("SENTINEL_ADMIN_EMAILS", "")   # อีเมล Super Admin (คั่นด้วย ,)
+    # ปิดสมัครเองสาธารณะ (sales-led): เปิดเฉพาะเมื่อ True; อีเมลใน admin_emails สมัครได้เสมอ (bootstrap เจ้าของ)
+    public_signup: bool = _bool("SENTINEL_PUBLIC_SIGNUP", False)
     trial_days: int = _int("SENTINEL_TRIAL_DAYS", 14)
     # กันเอาไปรันมั่ว: บล็อกเมื่อ license ไม่ผ่าน (true) หรือแค่เตือน+ปล่อยผ่าน (false)
     enforce_license: bool = _bool("SENTINEL_ENFORCE_LICENSE", True)
