@@ -90,8 +90,10 @@ async def signup(req: SignupRequest, request: Request):
     org_id = db.create_org(req.org_name.strip(), api_key, plan="starter",
                            status="trial", seats=5, quota_month=2000, valid_until=valid_until)
     seed_org_defaults(org_id)  # ใส่ policy เริ่มต้นให้องค์กรใหม่
+    # ถ้าอีเมลอยู่ใน SENTINEL_ADMIN_EMAILS → ตั้งเป็นผู้ดูแลแพลตฟอร์ม (กันเจ้าของหลุดสิทธิ์)
+    role = "platform_admin" if req.email.lower().strip() in settings.admin_email_set() else "admin"
     try:
-        uid = db.create_user(org_id, req.email, auth.hash_password(req.password), req.name)
+        uid = db.create_user(org_id, req.email, auth.hash_password(req.password), req.name, role=role)
     except sqlite3.IntegrityError:
         raise HTTPException(409, "อีเมลนี้ถูกใช้สมัครแล้ว")
     token = auth.make_token(uid, org_id, req.email.lower().strip())
@@ -371,6 +373,8 @@ async def contact(request: Request, payload: dict = Body(...)):
     # กันสแปม: จำกัด 5 ครั้ง/นาที/ไอพี (กัน DB flood + SMS bomb)
     if not ratelimit.allow("contact:" + ip, 5, 60):
         raise HTTPException(429, "ส่งบ่อยเกินไป โปรดลองใหม่ในอีกสักครู่")
+    if not ratelimit.allow("contact_global", 200, 3600):   # เพดานรวมทั้งระบบ/ชม. กัน flood แบบกระจายไอพี
+        raise HTTPException(429, "ระบบรับคำขอเยอะผิดปกติ โปรดลองใหม่ภายหลัง")
     if payload.get("website"):   # honeypot: บอทมักกรอกช่องซ่อนนี้
         return {"ok": True}
     name = (payload.get("name") or "").strip()[:120]

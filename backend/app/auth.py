@@ -165,10 +165,12 @@ def check_license(org: dict, device_id: str = "") -> None:
 
 
 def client_ip(request: Request) -> str:
-    """ดึงไอพีจริงของ client (อยู่หลัง Caddy/reverse proxy → อ่าน X-Forwarded-For)."""
+    """ดึงไอพีจริงของ client (อยู่หลัง Caddy proxy).
+    ใช้ค่า X-Forwarded-For ตัว *ขวาสุด* ที่ Caddy ต่อท้าย = ไอพีจริง
+    (ตัวซ้ายสุด client ปลอมได้ → ถ้าใช้จะทำให้ rate limit ถูกเลี่ยงด้วยการหมุน header)."""
     xff = request.headers.get("x-forwarded-for", "")
     if xff:
-        return xff.split(",")[0].strip()
+        return xff.split(",")[-1].strip()
     xr = request.headers.get("x-real-ip", "")
     if xr:
         return xr.strip()

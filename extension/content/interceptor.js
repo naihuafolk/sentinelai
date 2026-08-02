@@ -239,6 +239,7 @@
 
   // ---------- Event listeners (capture phase) ----------
   let imgBypassOnce = false;  // อนุญาตวางรูปรอบถัดไป (หลังผู้ใช้ยืนยันในโหมดบังคับ)
+  function armImgBypass() { armImgBypass(); setTimeout(() => { imgBypassOnce = false; }, 1500); }  // timeout กันค้าง (ถ้าไม่วางซ้ำใน 1.5 วิ ล้างทิ้ง)
 
   // ตรวจรูปที่วาง — โหมดปกติ (passive): รูปวางไปแล้ว แค่เตือน/บันทึก (รูปไม่หาย);
   //                โหมดบังคับ: กันรูปไว้ตรวจก่อน แล้วให้ผู้ใช้ยืนยันวางซ้ำถ้าปลอดภัย
@@ -246,7 +247,7 @@
     const result = await inspect(text || "แนบรูปภาพ", "paste", imgs);
     if (!result) {  // เชื่อมเซิร์ฟเวอร์ไม่ได้
       if (!passive && !cfg.failOpen && OV) OV.toast("โหมดบังคับ: หยุดรูปไว้ก่อน 🔒", "err");
-      else if (!passive && cfg.failOpen) { imgBypassOnce = true; if (OV) OV.toast("เชื่อมต่อไม่ได้ — วางรูปอีกครั้งเพื่อแนบ", "err"); }
+      else if (!passive && cfg.failOpen) { armImgBypass(); if (OV) OV.toast("เชื่อมต่อไม่ได้ — วางรูปอีกครั้งเพื่อแนบ", "err"); }
       return;
     }
     const d = result.decision, c = result.classification || {};
@@ -256,10 +257,10 @@
       if (OV) OV.showModal({ decision: d, channelName: channelName(), label: c.label, risk: c.risk_score, reasons: c.reasons, coaching: result.coaching });
       return;
     }
-    if (d === "allow" || d === "monitor") { imgBypassOnce = true; if (OV) OV.toast("รูปผ่านการตรวจ ✓ วางอีกครั้งเพื่อแนบ"); return; }
+    if (d === "allow" || d === "monitor") { armImgBypass(); if (OV) OV.toast("รูปผ่านการตรวจ ✓ วางอีกครั้งเพื่อแนบ"); return; }
     if (OV) {
       const choice = await OV.showModal({ decision: d, channelName: channelName(), label: c.label, risk: c.risk_score, reasons: c.reasons, coaching: result.coaching });
-      if (d === "warn" && choice === "confirm") { imgBypassOnce = true; OV.toast("วางรูปอีกครั้งเพื่อแนบ"); }
+      if (d === "warn" && choice === "confirm") { armImgBypass(); OV.toast("วางรูปอีกครั้งเพื่อแนบ"); }
     }
     // block/redact → กันไว้ (ไม่อนุญาตวางซ้ำ)
   }
@@ -360,17 +361,16 @@
     const { imgs, names, text, hasBinary } = await collectFiles(files);
     if (!imgs.length && !text) return { risky: false, unverified: false };
     const bodyText = text || ("แนบไฟล์: " + names.join(", "));
-    const onlyBinary = hasBinary && !imgs.length &&
-      bodyText.replace(/\[แนบไฟล์:[^\]]*\]/g, "").trim() === "";
     const result = await inspect(bodyText, "upload", imgs);
+    // unverified = มีไฟล์ชนิดที่อ่านเนื้อหาไม่ได้ (PDF/Word/Excel) แม้แต่ไฟล์เดียวในชุด → ต้องเตือนเสมอ
     if (!result) return { risky: !cfg.failOpen, unverified: hasBinary };  // เซิร์ฟเวอร์ล่ม
     const d = result.decision, c = result.classification || {};
     if (d === "allow" || d === "monitor") {
       if (d === "monitor" && OV) OV.toast(`บันทึกไฟล์แนบ (${c.label || "Internal"})`);
-      return { risky: false, unverified: onlyBinary };
+      return { risky: false, unverified: hasBinary };
     }
     if (OV) await OV.showModal({ decision: d, channelName: channelName(), label: c.label, risk: c.risk_score, reasons: c.reasons, coaching: result.coaching });
-    return { risky: true, unverified: onlyBinary };   // warn/redact/block บนไฟล์ = กันไว้
+    return { risky: true, unverified: hasBinary };   // warn/redact/block บนไฟล์ = กันไว้
   }
 
   // ปุ่มแนบไฟล์ (input[type=file]) — ล้างค่าเมื่อเสี่ยง (best-effort: ได้ผลกับเว็บที่อัปโหลดตอนกดส่ง)
