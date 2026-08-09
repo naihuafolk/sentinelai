@@ -290,7 +290,47 @@ function showApp() {
 function renderAuth(tab = "login") {
   const el = $("#auth-screen");
   el.innerHTML = `
-    <div class="lp">
+    <div class="lp lp-theme">
+      <style>
+        /* ===== THEME: SENTINEL premium (gradient hero + glassmorphism) ===== */
+        .lp-theme .lp-hero{position:relative;text-align:center;margin:6px 0 0;padding:66px 28px 54px;border-radius:24px;overflow:hidden;color:#fff;
+          background:radial-gradient(75% 130% at 0% 55%,#e2673f 0%,rgba(226,103,63,0) 46%),radial-gradient(70% 120% at 40% 24%,#7d4fd6 0%,rgba(125,79,214,0) 55%),radial-gradient(85% 130% at 100% 76%,#3d6ee0 0%,rgba(61,110,224,0) 52%),linear-gradient(125deg,#2a1f57,#181a3e);}
+        .lp-theme .lp-badge{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#eef1ff;letter-spacing:.16em;text-transform:uppercase;font-size:11.5px}
+        .lp-theme .lp-hero-title{color:#fff;font-weight:300;letter-spacing:.012em;text-transform:uppercase;font-size:clamp(30px,5.4vw,52px);line-height:1.13}
+        .lp-theme .lp-grad{background:none!important;-webkit-text-fill-color:#fff!important;color:#fff!important;font-weight:400}
+        .lp-theme .lp-hero-sub{color:rgba(255,255,255,.86)}
+        .lp-theme .lp-hero .lp-trust{color:rgba(255,255,255,.82)}
+        .lp-theme .lp-hero .lp-trust-sep{color:rgba(255,255,255,.4)}
+        .lp-theme .btn-primary,.lp-theme .btn-ghost,.lp-theme .lp-btn-lg{border-radius:999px}
+        .lp-theme .lp-hero .btn-ghost{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.35);color:#fff}
+        .lp-theme .lp-eyebrow{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#34d399;margin-bottom:8px}
+        /* features 2-column (left heading + right glass panel) */
+        .lp-theme .lp-feat-2col{display:grid;grid-template-columns:.82fr 1.18fr;gap:36px;align-items:center}
+        @media(max-width:820px){.lp-theme .lp-feat-2col{grid-template-columns:1fr;gap:20px}}
+        .lp-theme .lp-feat-intro h2{text-align:left}
+        .lp-theme .lp-feat-intro p{text-align:left;margin:12px 0 0;max-width:42ch}
+        .lp-theme .lp-feat-panel{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 26px;backdrop-filter:blur(8px)}
+        .lp-theme .lp-feat-row{display:flex;gap:16px;align-items:flex-start;padding:20px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+        .lp-theme .lp-feat-row:last-child{border-bottom:none}
+        .lp-theme .lp-feat-row .lp-feat-ico{width:38px;height:38px;flex:none;display:flex;align-items:center;justify-content:center;font-size:18px;background:rgba(16,185,129,.13);border:1px solid rgba(52,211,153,.32);border-radius:11px;margin:0}
+        .lp-theme .lp-feat-row h3{margin:0 0 3px;font-size:15.5px;font-weight:700;color:#34d399}
+        .lp-theme .lp-feat-row p{margin:0;font-size:13px;color:var(--ink-2);line-height:1.55}
+        /* live view / demo */
+        .lp-theme .lp-demo-frame{border-radius:18px;box-shadow:0 30px 70px -30px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.06)}
+        /* glass cards: steps, trust, pricing */
+        .lp-theme .lp-step,.lp-theme .lp-trust-card,.lp-theme .lp-plan{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09);backdrop-filter:blur(8px);border-radius:16px}
+        .lp-theme .lp-trust-card h3{color:#34d399}
+        .lp-theme .lp-tc-ico{background:transparent;border:1px solid rgba(52,211,153,.35)}
+        .lp-theme .lp-plan-name{color:#34d399}
+        .lp-theme .lp-plan--hot{border:1.5px solid rgba(16,185,129,.6);box-shadow:0 24px 60px -26px rgba(16,185,129,.4)}
+        /* contact section gradient banner */
+        .lp-theme #lp-contact{border-radius:24px;padding:44px 28px;margin-top:24px;
+          background:radial-gradient(70% 130% at 8% 50%,rgba(226,103,63,.5) 0%,transparent 48%),radial-gradient(70% 120% at 55% 30%,rgba(125,79,214,.5) 0%,transparent 55%),radial-gradient(80% 130% at 100% 70%,rgba(61,110,224,.5) 0%,transparent 52%),linear-gradient(125deg,#241b4d,#171935)}
+        .lp-theme #lp-contact .lp-h2,.lp-theme #lp-contact .lp-sec-sub{color:#fff}
+        .lp-theme .lp-contact-form{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(10px)}
+        /* section headings a touch bigger */
+        .lp-theme .lp-h2{font-size:clamp(24px,3.4vw,34px)}
+      </style>
       <!-- ===== แถบนำทางบนสุด ===== -->
       <header class="lp-nav">
         <div class="lp-brand">
@@ -333,33 +373,20 @@ function renderAuth(tab = "login") {
         <p class="lp-demo-cap">▶ ตัวอย่างการทำงานจริง — ป้องกันทั้งเบราว์เซอร์ · คอม · สกรีนช็อต</p>
       </section>
 
-      <!-- ===== FEATURES ===== -->
-      <section class="lp-section">
-        <div class="lp-sec-head">
-          <h2 class="lp-h2">ปกป้องข้อมูลลับทุกช่องทาง AI</h2>
-          <p class="lp-sec-sub">ตรวจจับ วิเคราะห์ และหยุดการรั่วไหล ก่อนข้อมูลออกจากองค์กร</p>
-        </div>
-        <div class="lp-features">
-          <article class="lp-feat">
-            <div class="lp-feat-ico" aria-hidden="true">🛡️</div>
-            <h3 class="lp-feat-t">ดักก่อนส่ง</h3>
-            <p class="lp-feat-d">Extension + Agent ตรวจทุกข้อความก่อนถูกส่งถึงผู้ให้บริการ AI</p>
-          </article>
-          <article class="lp-feat">
-            <div class="lp-feat-ico" aria-hidden="true">🧠</div>
-            <h3 class="lp-feat-t">ตรวจ 3 ชั้น</h3>
-            <p class="lp-feat-d">Regex + Fingerprint + AI วิเคราะห์บริบทเชิงลึกอย่างแม่นยำ</p>
-          </article>
-          <article class="lp-feat">
-            <div class="lp-feat-ico" aria-hidden="true">🔒</div>
-            <h3 class="lp-feat-t">กันแชร์คีย์</h3>
-            <p class="lp-feat-d">ผูกฮาร์ดแวร์ 1 เครื่อง = 1 สิทธิ์ ป้องกันการใช้สิทธิ์ข้ามเครื่อง</p>
-          </article>
-          <article class="lp-feat">
-            <div class="lp-feat-ico" aria-hidden="true">📊</div>
-            <h3 class="lp-feat-t">Dashboard เห็นทุกเหตุการณ์</h3>
-            <p class="lp-feat-d">สถิติ แนวโน้ม และรายงานการรั่วไหลแบบเรียลไทม์ในที่เดียว</p>
-          </article>
+      <!-- ===== FEATURES (ซ้าย-ขวา แบบ mockup) ===== -->
+      <section class="lp-section lp-feat-sec">
+        <div class="lp-feat-2col">
+          <div class="lp-feat-intro">
+            <span class="lp-eyebrow">THE PLATFORM</span>
+            <h2 class="lp-h2">ปกป้องข้อมูลลับ<br>ทุกช่องทาง AI</h2>
+            <p class="lp-sec-sub">ตรวจจับ วิเคราะห์ และหยุดการรั่วไหล ก่อนข้อมูลออกจากองค์กร</p>
+          </div>
+          <div class="lp-feat-panel">
+            <div class="lp-feat-row"><div class="lp-feat-ico" aria-hidden="true">🛡️</div><div><h3>ดักก่อนส่ง</h3><p>Extension + Agent ตรวจทุกข้อความก่อนถูกส่งถึงผู้ให้บริการ AI</p></div></div>
+            <div class="lp-feat-row"><div class="lp-feat-ico" aria-hidden="true">🧠</div><div><h3>ตรวจ 3 ชั้น</h3><p>Regex + Fingerprint + AI วิเคราะห์บริบทเชิงลึกอย่างแม่นยำ</p></div></div>
+            <div class="lp-feat-row"><div class="lp-feat-ico" aria-hidden="true">🔒</div><div><h3>กันแชร์คีย์</h3><p>ผูกฮาร์ดแวร์ 1 เครื่อง = 1 สิทธิ์ ป้องกันการใช้สิทธิ์ข้ามเครื่อง</p></div></div>
+            <div class="lp-feat-row"><div class="lp-feat-ico" aria-hidden="true">📊</div><div><h3>Dashboard รวมทุกอย่าง</h3><p>สถิติ แนวโน้ม และรายงานการรั่วไหลแบบเรียลไทม์ในที่เดียว</p></div></div>
+          </div>
         </div>
       </section>
 
