@@ -330,6 +330,32 @@ function renderAuth(tab = "login") {
         .lp-theme .lp-contact-form{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(10px)}
         /* section headings a touch bigger */
         .lp-theme .lp-h2{font-size:clamp(24px,3.4vw,34px)}
+        /* NAV: โลโก้กลาง (แบบ mockup) */
+        .lp-theme .lp-nav{justify-content:center;position:relative;padding:22px 0 6px}
+        .lp-theme .lp-brand{gap:9px}
+        .lp-theme .lp-brandname{letter-spacing:.24em;text-transform:uppercase;font-weight:700}
+        .lp-theme .lp-nav-actions{position:absolute;right:2px;top:16px}
+        .lp-theme .lp-nav-actions .lp-navlink{display:none}
+        @media(max-width:640px){.lp-theme .lp-nav-actions{position:static;margin-top:8px;justify-content:center;width:100%}}
+        /* LIVE VIEW / demo -> กล่องกรอบ */
+        .lp-theme .lp-demo-sec{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);border-radius:22px;padding:24px}
+        .lp-theme .lp-demo-cap{color:var(--ink-2)}
+        /* PRICING polish */
+        .lp-theme .lp-plan{padding:26px 22px}
+        .lp-theme .lp-plan-badge{background:#10b981;color:#04241a}
+        .lp-theme .lp-plan .btn{border-radius:999px}
+        /* CONTACT -> การ์ดฟอร์มสีขาวบน gradient (แบบ mockup) */
+        .lp-theme #lp-contact .lp-contact-form{background:#fff;border:none;box-shadow:0 34px 80px -34px rgba(0,0,0,.65)}
+        .lp-theme #lp-contact .lp-cf-field label{color:#334155}
+        .lp-theme #lp-contact .lp-cf-field input{background:#f1f5f9;border:1px solid #dbe2ea;color:#0f172a}
+        .lp-theme #lp-contact .lp-cf-field input::placeholder{color:#9aa6b8}
+        .lp-theme #lp-contact .lp-contact-form .btn{background:#0f172a;color:#fff;border-radius:12px}
+        .lp-theme #lp-contact .lp-cf-msg{color:#334155}
+        /* FOOTER gradient */
+        .lp-theme .lp-footer{margin-top:24px;border-radius:22px;padding:34px 26px;color:#fff;
+          background:radial-gradient(70% 130% at 10% 50%,rgba(226,103,63,.42) 0%,transparent 48%),radial-gradient(70% 120% at 55% 30%,rgba(125,79,214,.42) 0%,transparent 55%),radial-gradient(80% 130% at 100% 70%,rgba(61,110,224,.42) 0%,transparent 52%),linear-gradient(125deg,#221a48,#16182f)}
+        .lp-theme .lp-footer a{color:rgba(255,255,255,.9)} .lp-theme .lp-foot-copy{color:rgba(255,255,255,.7)}
+        .lp-theme .lp-foot-brand{color:#fff}
       </style>
       <!-- ===== แถบนำทางบนสุด ===== -->
       <header class="lp-nav">
