@@ -356,6 +356,24 @@ function renderAuth(tab = "login") {
           background:radial-gradient(70% 130% at 10% 50%,rgba(226,103,63,.42) 0%,transparent 48%),radial-gradient(70% 120% at 55% 30%,rgba(125,79,214,.42) 0%,transparent 55%),radial-gradient(80% 130% at 100% 70%,rgba(61,110,224,.42) 0%,transparent 52%),linear-gradient(125deg,#221a48,#16182f)}
         .lp-theme .lp-footer a{color:rgba(255,255,255,.9)} .lp-theme .lp-foot-copy{color:rgba(255,255,255,.7)}
         .lp-theme .lp-foot-brand{color:#fff}
+        /* ===== จัดเรียง section ให้ตรง mockup + ซ่อนที่เกิน ===== */
+        .lp-theme{display:flex;flex-direction:column}
+        .lp-theme>*{order:9}
+        .lp-theme .lp-nav{order:0}
+        .lp-theme .lp-hero{order:1}
+        .lp-theme .lp-feat-sec{order:2}
+        .lp-theme .lp-demo-sec{order:3}
+        .lp-theme .lp-section:has(.lp-trust-grid){order:4}
+        .lp-theme #lp-pricing{order:5}
+        .lp-theme #lp-contact{order:6}
+        .lp-theme #lp-auth{order:7}
+        .lp-theme .lp-footer{order:8}
+        .lp-theme .lp-section:has(.lp-steps){display:none}
+        .lp-theme #lp-articles{display:none}
+        /* hero: eyebrow แบบ mockup (ไม่เป็น pill) + หัวข้อบางลง */
+        .lp-theme .lp-badge{background:none;border:none;padding:0;color:rgba(255,255,255,.72);letter-spacing:.2em;font-weight:700}
+        .lp-theme .lp-hero-title{font-weight:400;text-wrap:balance}
+        .lp-theme .lp-demo-sec .lp-eyebrow-live{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#34d399;margin-bottom:6px}
       </style>
       <!-- ===== แถบนำทางบนสุด ===== -->
       <header class="lp-nav">
@@ -374,7 +392,7 @@ function renderAuth(tab = "login") {
       <!-- ===== HERO ===== -->
       <section class="lp-hero">
         <span class="lp-badge">🤖 ขับเคลื่อนด้วย AI · ป้องกันข้อมูลรั่วสู่ AI สาธารณะ</span>
-        <h1 class="lp-hero-title">กันข้อมูลบริษัท<span class="lp-grad"> รั่วสู่ AI</span></h1>
+        <h1 class="lp-hero-title">กันข้อมูลบริษัท<br><span class="lp-grad">รั่วไหลสู่ AI</span></h1>
         <p class="lp-hero-sub">SentinelAI ดักจับข้อมูลลับก่อนพนักงานส่งเข้า ChatGPT · Gemini · Claude · Copilot — ขับเคลื่อนด้วย AI</p>
         <div class="lp-hero-cta">
           <button type="button" class="btn btn-primary lp-btn-lg" data-lp-cta="contact">ติดต่อทีมงาน</button>
