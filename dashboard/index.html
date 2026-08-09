@@ -6,7 +6,7 @@
   <title>SentinelAI — คอนโซลป้องกันข้อมูลลับรั่วสู่ AI</title>
   <meta name="description" content="แพลตฟอร์มป้องกันข้อมูลลับองค์กรรั่วไหลสู่ AI สาธารณะ" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=20260810" />
 </head>
 <body>
   <!-- ฉากหลังออโรร่าเคลื่อนไหวช้า ๆ (อยู่หลังทุกอย่าง, z-index:-1) -->
@@ -89,6 +89,7 @@
   <div id="modal-root"></div>
   <div id="chart-tip" class="chart-tip" hidden></div>
 
-  <script type="module" src="app.js"></script>
+  <!-- เพิ่มเลข ?v= ทุกครั้งที่แก้ไฟล์ เพื่อบังคับเบราว์เซอร์โหลดใหม่ (กัน cache ค้าง) -->
+  <script type="module" src="app.js?v=20260810"></script>
 </body>
 </html>
